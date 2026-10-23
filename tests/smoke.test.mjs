@@ -624,13 +624,13 @@ test('Pooh Snuggler integrates encrypted original pages and catalogue metadata',
   assert.ok(pooh.assets.every(path=>path.startsWith('data/encrypted/pooh/')));
   for(const path of pooh.assets) assert.ok(existsSync(new URL('../'+path,import.meta.url)));
   const loader=source(pooh.assets.at(-1));
-  assert.match(loader,/gzip\\+aes-256-gcm/);
+  assert.ok(loader.includes('gzip+aes-256-gcm'));
   assert.match(loader,/keySource.*login/);
   assert.doesNotMatch(loader,/Rnd 1:|Make 2 in mustard|crochet hook 6\\.00/);
   const covers=JSON.parse(source('data/encrypted/cover-previews.json'));
   assert.ok(covers.covers[pooh.id]?.ciphertext);
   assert.ok(source('js/estimates.js').includes(pooh.id));
-  assert.match(source('index.html'),/js\\/estimates\\.js\\?v=luna-v1/);
+  assert.ok(source('index.html').includes('js/estimates.js?v=luna-v1'));
 });
 
 test('Luna the Druid has protected assets, a cover and a time estimate', () => {
