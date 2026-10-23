@@ -25,7 +25,8 @@ jobs:
           let tests=await readFile('tests/smoke.test.mjs','utf8');
           if(!tests.includes('assert.equal(catalog.length,5)')||!tests.includes('assert.equal(catalogue.length,5)')) throw Error('Unexpected test structure');
           tests=tests.replaceAll('assert.equal(catalog.length,5)','assert.equal(catalog.length,6)')
-            .replaceAll('assert.equal(catalogue.length,5)','assert.equal(catalogue.length,6)');
+            .replaceAll('assert.equal(catalogue.length,5)','assert.equal(catalogue.length,6)')
+            .replaceAll('assert.equal(entries.length,5)','assert.equal(entries.length,6)');
           tests+=`
           test('Donut Kitty has protected guide assets and a separately encrypted cover', () => {
             const entries=JSON.parse(source('data/pattern-catalog.json'));
