@@ -29,9 +29,7 @@ A small personal crochet companion built as a static installable iPad web app (P
 
 This repository and its static hosting are **public**. The site's client-side password protects the encrypted Little Tooth, Baby Boba Bunny, Baby Appa, Brie Mouse and Cute Loaf Cat payloads, but it is **not server authentication**. An attacker can download those ciphertexts and attempt offline password guesses. Use a long, unique password for meaningful protection.
 
-The legacy `private-guide.js` contained an **unencrypted purchased Donut Kitty guide**, so it has been removed from the current repository tree and site. **Past Git commits, forks, and third-party caches may still contain the original plaintext.** Deleting a file in a new commit cannot erase Git history. Do not assume this original content is fully private.
-
-Donut Kitty already installed on a device remains stored locally in IndexedDB. This release removes the manual file-import button and import code. On a new device Donut Kitty is not bundled and therefore will not appear automatically. Never re-add its original plaintext file to the public repository.
+An older public commit contained a purchased guide in plaintext. The file has been removed from the current repository and app. **Past Git commits, forks, and third-party caches may still contain the original material.** Removing files now does not erase Git history. Never commit a purchased PDF or plaintext pattern.
 
 ## Storage and upgrades
 
@@ -63,12 +61,12 @@ Cards in Your Pattern Hive and each pattern header display an approximate range 
 
 The home screen loads only the small public catalogue, app modules and design assets. Encrypted guide payloads (and their full-size photos) are **not** downloaded on app startup. Opening a guide retrieves its encrypted parts once, decrypts that guide only and saves it encrypted in IndexedDB. On the same iPad, it can subsequently open from local storage without another network request. The service worker also caches requested parts for offline access. A new guide requires one online opening before it is available offline.
 
-Catalogue cards show a generic preview until a guide has been opened once. The app then saves a small **encrypted** cover preview on the device, allowing the original cover to display on later visits without decrypting the full guide. Purchased images remain inside the protected payload. Progress percentages from earlier opens are remembered without scanning all saved ciphertext on every launch.
+Catalogue cards display encrypted on-device cover previews, automatically generated from the original guides when needed. Purchased images remain inside the protected payload; previews are encrypted locally. Progress percentages from earlier opens are remembered without scanning all saved ciphertext on every launch.
 
 Run `node --test tests/smoke.test.mjs` to check the public catalogue, module dependencies, encryption storage and navigation templates.
 
-## Original photos and Donut Kitty recovery
+## Original crochet photographs
 
-The grid never deliberately substitutes decorative drawings for pattern photos. After unlocking, it uses encrypted on-device photo previews immediately and automatically downloads/decrypts missing encrypted guides in the background to create real previews (the first visit can take longer and show “Loading photo…”). The downloaded guides remain encrypted in IndexedDB for offline use. This intentionally trades some initial network use for original photos without manually opening every pattern.
+The grid displays original photographs rather than illustrated substitutes. After unlocking, it uses encrypted previews from device storage or automatically fetches encrypted guides to create small on-device thumbnails. The first visit can briefly show “Loading photo…” while images are prepared.
 
-Donut Kitty was removed from the public repository because its previous plaintext file was unsafe. If the existing Donut guide cannot be opened on an older iPad, use the **Donut Kitty-only recovery picker** and select the original `Donut-Kitty-Kimsi-Guide.json` export. The browser validates its id and embedded photos, encrypts it locally using the existing master key, and leaves `kimsi-progress:donut-kitty` unchanged. No general import feature or publicly accessible paid pattern file is restored.
+Removing a guide from the visible library does not delete saved progress or encrypted local records. Only the five bundled patterns appear in the app; older device data is preserved for safety.
