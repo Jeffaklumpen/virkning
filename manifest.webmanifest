@@ -1,17 +1,40 @@
 {
-  "name": "Sunbeam Art · Kimsi's crochet corner",
+  "name": "Sunbeam Art — Kimsi's Pattern Hive",
   "short_name": "Sunbeam Art",
-  "description": "A sunny little crochet companion for Kimsi's handmade creations",
-  "start_url": "./",
+  "description": "Kimsi's cozy, private crochet pattern hive.",
+  "id": "./",
+  "start_url": "./?app=1",
+  "scope": "./",
   "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
+  "orientation": "any",
   "background_color": "#FFFAF2",
   "theme_color": "#FFFAF2",
+  "lang": "en",
   "icons": [
+    {
+      "src": "assets/sunbeam-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/sunbeam-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "assets/sunbeam-bee.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     }
+  ],
+  "categories": [
+    "lifestyle",
+    "productivity"
   ]
 }
