@@ -1,6 +1,6 @@
 /* Sunbeam Art — small offline shell for an iPad home-screen web app. */
 'use strict';
-const CACHE = 'sunbeam-art-offline-v2';
+const CACHE = 'sunbeam-art-offline-v3';
 const SHELL = [
   './',
   './index.html',
@@ -60,11 +60,20 @@ self.addEventListener('fetch', event => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const available = await cache.match(request, {ignoreSearch:true});
-    // Fast, reliable home-screen startup; refresh the local copy for next time.
     const refresh = fetch(request).then(async response => {
       if (response.ok) await cache.put(request, response.clone());
       return response;
     });
+    // Prefer the network for updated scripts/styles. Otherwise a cached older
+    // app can be served after a GitHub deployment, especially on iPad.
+    if (/\.(?:js|css|webmanifest)$/i.test(url.pathname)) {
+      try {
+        const fresh = await refresh;
+        return fresh.ok ? fresh : (available || fresh);
+      } catch (error) {
+        return available || Response.error();
+      }
+    }
     if (available) {
       event.waitUntil(refresh.catch(() => {}));
       return available;
