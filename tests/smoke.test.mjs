@@ -420,8 +420,8 @@ test('long guides can be scanned in a single overview and wired from guide mode'
   assert.match(app,/case 'back-to-guide':returnToGuide\(\)/);
   assert.match(app,/case 'overview-section'/);
   assert.match(app,/if\(overviewOpen\|\|!activeId/);
-  assert.ok(page.includes('js/overview.js?v=overview-v1'));
-  assert.ok(page.includes('css/overview.css?v=overview-v1'));
+  assert.ok(page.includes('js/overview.js?v=overview-v2'));
+  assert.ok(page.includes('css/overview.css?v=overview-v2'));
   assert.ok(page.indexOf('js/overview.js?')<page.indexOf('js/app.js?'));
   assert.ok(worker.includes('./js/overview.js'));
   assert.ok(worker.includes('./css/overview.css'));
@@ -478,4 +478,26 @@ test('Donut Kitty has protected guide assets and a separately encrypted cover', 
   assert.match(source(donut.assets.at(-1)),/wrappedSessionKey/);
   assert.ok(JSON.parse(source('data/encrypted/cover-previews.json')).covers[donut.id].wrappedSessionKey);
   assert.match(source('service-worker.js'),/config\/donut-envelope\.json/);
+});
+
+test('overview back-to-top button is accessible, scroll-aware and works on iPad', () => {
+  const {window}=sandbox();
+  runInNewContext(source('js/estimates.js'),{window});
+  runInNewContext(source('js/previews.js'),{window,Image:function(){}});
+  runInNewContext(source('js/overview.js'),{window});
+  const guide={id:'test-pattern',title:'A long pattern',groups:[{id:'first',title:'Start',steps:[{id:'one',title:'Step one',instruction:'Crochet.'}]}]};
+  const markup=window.SunbeamOverview.render(guide,{done:{}},'one');
+  assert.match(markup,/<button[^>]+class="overview-to-top"[^>]+data-action="overview-top"[^>]+hidden>/);
+  assert.match(markup,/aria-label="Scroll to the top of the pattern overview"/);
+  assert.match(markup,/Back to top/);
+  const app=source('js/app.js'),css=source('css/overview.css');
+  assert.match(app,/window.addEventListener\('scroll',updateOverviewTopButton,\{passive:true\}\)/);
+  assert.match(app,/button.hidden=window.scrollY<480/);
+  assert.match(app,/case 'overview-top':if\(overviewOpen\)window.scrollTo/);
+  assert.match(app,/prefers-reduced-motion: reduce/);
+  assert.match(css,/\.overview-to-top\[hidden\]\{display:none\}/);
+  assert.match(css,/safe-area-inset-bottom/);
+  assert.match(css,/@media\(max-width:700px\)/);
+  assert.match(source('index.html'),/js\/app.js\?v=overview-v2/);
+  assert.match(source('service-worker.js'),/sunbeam-art-offline-v18/);
 });

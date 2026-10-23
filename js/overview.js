@@ -99,6 +99,10 @@
           <div class="overview-step-list">${steps.map(step=>card(p,step,progress,++stepNumber,currentStepId)).join('')}</div>
         </section>`).join('')}
       </div>
+      <button type="button" class="overview-to-top" data-action="overview-top" aria-label="Scroll to the top of the pattern overview" hidden>
+        <span class="overview-to-top-icon" aria-hidden="true">${icon('left')}</span>
+        <span>Back to top</span>
+      </button>
       <div class="overview-end"><span aria-hidden="true">✳</span><strong>End of pattern</strong>
         <p>Ready to get back to crocheting?</p>
         <button class="btn btn-primary" type="button" data-action="back-to-guide">${icon('left')} Back to guide</button>

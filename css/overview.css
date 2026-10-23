@@ -116,3 +116,15 @@
 .overview-trigger{padding:10px 12px;font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){.overview-toc-link,.overview-back,.overview-trigger{transition:none}}
+
+/* Easy return navigation while scanning long patterns. Visible only once scrolled. */
+.overview-to-top{position:fixed;right:max(20px,env(safe-area-inset-right,0px) + 20px);bottom:max(23px,env(safe-area-inset-bottom,0px) + 23px);z-index:30;display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;padding:11px 17px;border:1px solid #e6b96a;border-radius:999px;background:#fff3da;color:#785320;box-shadow:0 8px 30px rgba(85,61,31,.19);font:inherit;font-size:13px;font-weight:900;cursor:pointer;transition:background .18s,border-color .18s,transform .18s,box-shadow .18s}
+.overview-to-top[hidden]{display:none}
+.overview-to-top:hover{background:#ffe9bd;border-color:#d9a454;transform:translateY(-2px);box-shadow:0 11px 32px rgba(85,61,31,.22)}
+.overview-to-top:focus-visible{outline:3px solid #ad762c;outline-offset:3px}
+.overview-to-top-icon{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#ffdf9f;color:#805820}
+.overview-to-top-icon svg{width:16px;height:16px;transform:rotate(90deg)}
+@media(max-width:700px){
+.overview-to-top{right:max(14px,env(safe-area-inset-right,0px) + 14px);bottom:max(18px,env(safe-area-inset-bottom,0px) + 18px);min-height:48px;padding:9px 13px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.overview-to-top{transition:none}}
