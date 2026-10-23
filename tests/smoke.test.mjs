@@ -215,6 +215,7 @@ test('time estimates and requested navigation copy display consistently', () => 
 test('library presentation works with catalogue entries before decrypting guides', () => {
   const {window}=sandbox();
   runInNewContext(source('js/estimates.js'),{window},{filename:'js/estimates.js'});
+  runInNewContext(source('js/previews.js'),{window,Image:function(){}},{filename:'js/previews.js'});
   runInNewContext(source('js/views.js'),{window},{filename:'js/views.js'});
   const meta={id:'huniebeecrafts-baby-appa',title:'Baby Appa',designer:'Huniebeecrafts'};
   const html=window.SunbeamViews.library([{p:meta,pr:{},n:{percent:0},time:'12–18 hours'}],1);
@@ -262,19 +263,19 @@ test('original photo sources are prioritized; vector illustration is never subst
     images:{finished:'data:image/jpeg;base64,AAAA'}};
   assert.equal(window.SunbeamPreviews.source(guide),'data:image/jpeg;base64,AAAA');
   const markup=window.SunbeamViews.library([{p:guide,pr:{},n:{percent:0},time:'5–9 hours'}],1);
-  assert.match(markup,/data:image\\/jpeg;base64,AAAA/);
-  assert.doesNotMatch(markup,/donut-cover\\.svg/);
+  assert.ok(markup.includes('data:image/jpeg;base64,AAAA'));
+  assert.ok(!markup.includes('donut-cover.svg'));
   const metadata={id:'demo',title:'Demo',coverAsset:'assets/tooth-cover.svg'};
   const noPhoto=window.SunbeamViews.library([{p:metadata,pr:{},n:{percent:0},time:null}],1);
   assert.match(noPhoto,/Loading photo/);
-  assert.doesNotMatch(noPhoto,/tooth-cover\\.svg|🧶/);
+  assert.ok(!noPhoto.includes('tooth-cover.svg')&&!noPhoto.includes('🧶'));
 });
 
 test('Donut Kitty offers an explicit single-guide recovery without erasing progress', () => {
  const app=source('js/app.js');
  assert.match(app,/function showDonutRecovery/);
- assert.match(app,/Donut-Kitty-Kimsi-Guide\\.json/);
- assert.match(app,/restored\\.id!=='donut-kitty'/);
+ assert.ok(app.includes('Donut-Kitty-Kimsi-Guide.json'));
+ assert.ok(app.includes("restored.id!=='donut-kitty'"));
  assert.match(app,/persistProgress|loadProgress/);
  assert.match(app,/void populateRealCoverPhotos/);
  assert.doesNotMatch(app,/importPrivateGuide|import-guide|guide-import-file/);
