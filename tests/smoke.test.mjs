@@ -222,7 +222,7 @@ test('library presentation works with catalogue entries before decrypting guides
   assert.match(html,/12–18 hours/);
   assert.match(html,/pattern-thumb-placeholder/);
   const previewHtml=window.SunbeamViews.library([{p:{...meta,preview:'data:image/webp;base64,AAAA'},pr:{},n:{percent:0},time:null}],1);
-  assert.match(previewHtml, /data:image\\/webp;base64,AAAA/);
+  assert.ok(previewHtml.includes('data:image/webp;base64,AAAA'));
   const guide={...meta,groups:[{id:'body',title:'Body',steps:[{id:'first',title:'First',instruction:'Single crochet'}]}]};
   const state={done:{},materials:{},earOption:'2',variantOption:'solid'};
   const markup=window.SunbeamViews.guide(guide,state,'body','first',
