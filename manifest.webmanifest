@@ -1,1 +1,17 @@
-{"name":"Kimsi's Cozy Stitches","short_name":"Kimsi ♡","description":"A cozy crochet companion","start_url":"./","display":"standalone","background_color":"#fbf7f3","theme_color":"#fbf7f3","icons":[{"src":"favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{
+  "name": "Sunbeam Art · Kimsi's crochet corner",
+  "short_name": "Sunbeam Art",
+  "description": "A sunny little crochet companion for Kimsi's handmade creations",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FFFAF2",
+  "theme_color": "#FFFAF2",
+  "icons": [
+    {
+      "src": "assets/sunbeam-bee.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
