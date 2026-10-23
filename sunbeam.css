@@ -276,3 +276,49 @@ a{color:#9D671D}
 .unlock-code-field:focus{border-color:#d09b43;box-shadow:0 0 0 3px #f9efdc}
 .unlock-error{min-height:21px;margin:8px 0 0;font-size:12px!important;font-weight:850;color:#a74146!important}
 @media(max-width:700px){.pattern-private-tag{top:8px;right:8px;padding:6px 9px;font-size:10px}}
+
+/* Private single-password entrance */
+.sunbeam-login{min-height:min(760px,calc(100vh - 165px));display:grid;place-items:center;padding:20px 0 38px}
+.sunbeam-login-card{
+  width:min(545px,100%);border:1px solid #ecdcb9;border-radius:34px;
+  text-align:center;padding:34px clamp(22px,5vw,49px) 36px;
+  background:linear-gradient(145deg,#fffefa 8%,#fff9e9 83%,#fff6ea 100%);
+  box-shadow:0 24px 75px rgba(157,112,42,.105);
+  overflow:hidden;position:relative
+}
+.sunbeam-login-card::before{
+  content:'';width:110px;height:110px;border-radius:50%;background:#ffe9b8;
+  position:absolute;top:-70px;left:-45px;opacity:.6;pointer-events:none
+}
+.login-bee-halo{
+  display:grid;place-items:center;width:186px;height:178px;
+  border-radius:50%;background:radial-gradient(circle,#fff2cd 20%,#ffedca 58%,transparent 72%);
+  margin:-4px auto 15px;position:relative
+}
+.login-bee-image{width:180px;height:180px;object-fit:contain;animation:bee-hover 4.5s ease-in-out infinite;filter:drop-shadow(0 12px 7px rgba(164,112,40,.11))}
+.sunbeam-login .kicker{font-size:10px;letter-spacing:1.8px}
+.sunbeam-login h1{font-size:clamp(31px,5vw,42px);margin:13px auto 12px;letter-spacing:-1.55px;line-height:1.16}
+.sunbeam-login h1 em{color:#a87931}
+.login-subtitle{font-size:15px;color:#8b7967;line-height:1.8;max-width:405px;margin:0 auto 26px}
+#sunbeam-login-form{text-align:left;display:block}
+#sunbeam-login-form label{font-size:13px;color:#644f37;font-weight:900;display:block;margin:0 0 8px}
+#sunbeam-password{
+  width:100%;min-height:55px;display:block;padding:13px 16px;border:2px solid #ebdcc1;
+  border-radius:15px;background:#fffefd;color:#483628;font-size:16px;outline:0;
+  box-shadow:0 3px 9px rgba(100,70,30,.02)
+}
+#sunbeam-password:focus{border-color:#d8a347;box-shadow:0 0 0 4px #f8ebd2}
+#sunbeam-password::placeholder{color:#b2a18d}
+.login-error{color:#9e3e47!important;min-height:21px;font-size:12px!important;line-height:1.6!important;font-weight:850!important;margin:9px 0 8px!important}
+#sunbeam-login-submit{width:100%;min-height:55px;font-size:15px;border-radius:15px}
+#sunbeam-login-submit:disabled{opacity:.62;cursor:wait}
+.login-remember-note{font-size:12px;color:#a38f76;line-height:1.65;margin:20px auto 0;max-width:390px}
+@media(max-width:700px){
+  .sunbeam-login{min-height:calc(100dvh - 142px);padding:8px 0 26px}
+  .sunbeam-login-card{padding:22px 21px 26px;border-radius:26px}
+  .login-bee-halo{width:142px;height:139px;margin:0 auto 8px}
+  .login-bee-image{width:142px;height:142px}
+  .sunbeam-login h1{font-size:34px}
+  .login-subtitle{font-size:14px;margin-bottom:22px}
+}
+@media(prefers-reduced-motion:reduce){.login-bee-image{animation:none}}
