@@ -1,0 +1,68 @@
+/* Sunbeam Art page motion — restrained, warm, and inexpensive on iPad. */
+#app{view-transition-name:sunbeam-page}
+@keyframes sunbeam-page-out{
+  from{opacity:1;transform:translate3d(0,0,0) scale(1)}
+  to{opacity:0;transform:translate3d(0,-7px,0) scale(.997)}
+}
+@keyframes sunbeam-page-in{
+  from{opacity:0;transform:translate3d(0,12px,0) scale(.995)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+@keyframes sunbeam-page-back-in{
+  from{opacity:0;transform:translate3d(0,-10px,0) scale(.995)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+::view-transition-old(sunbeam-page){
+  animation:145ms ease-in both sunbeam-page-out
+}
+::view-transition-new(sunbeam-page){
+  animation:300ms cubic-bezier(.22,1,.36,1) both sunbeam-page-in
+}
+html[data-motion-direction="back"]::view-transition-new(sunbeam-page){
+  animation-name:sunbeam-page-back-in
+}
+
+/* Subtle feedback while choosing projects or moving between sections. */
+.pattern-card{transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s ease,border-color .2s ease}
+.pattern-thumb img{transition:transform .42s cubic-bezier(.22,1,.36,1)}
+@media(hover:hover) and (pointer:fine){
+  .pattern-card:hover{transform:translateY(-5px);border-color:#e7bf7a}
+  .pattern-card:hover .pattern-thumb img{transform:scale(1.035)}
+  .btn:not(:disabled),.overview-trigger,.overview-toc-link,.overview-open-step,.overview-photo{
+    transition:transform .2s cubic-bezier(.22,1,.36,1),background-color .2s ease,border-color .2s ease,box-shadow .2s ease
+  }
+  .overview-photo:hover{transform:translateY(-2px)}
+}
+.pattern-card:active{transform:scale(.988)}
+.btn:not(:disabled):active,.overview-trigger:active,.overview-toc-link:active,.overview-open-step:active{
+  transform:scale(.975)
+}
+@keyframes sunbeam-dialog-overlay{
+  from{opacity:0}
+  to{opacity:1}
+}
+@keyframes sunbeam-dialog-open{
+  from{opacity:0;transform:translate3d(0,15px,0) scale(.97)}
+  to{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+.dialog-backdrop{animation:sunbeam-dialog-overlay .17s ease-out both}
+.dialog{animation:sunbeam-dialog-open .26s cubic-bezier(.22,1,.36,1) both}
+.zoom-backdrop .dialog-img{animation:sunbeam-dialog-open .23s cubic-bezier(.22,1,.36,1) both}
+@keyframes sunbeam-toast-in{
+  from{opacity:0;transform:translate3d(-50%,10px,0)}
+  to{opacity:1;transform:translate3d(-50%,0,0)}
+}
+.toast{animation:sunbeam-toast-in .22s cubic-bezier(.22,1,.36,1) both}
+
+/* The user’s OS preference always takes priority over decorative animation. */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  #app{view-transition-name:none}
+  ::view-transition-old(sunbeam-page),::view-transition-new(sunbeam-page){animation:none!important}
+  .dialog-backdrop,.dialog,.zoom-backdrop .dialog-img,.toast{animation:none!important}
+  .pattern-card,.pattern-thumb img,.btn,.overview-trigger,.overview-toc-link,.overview-open-step,.overview-photo{transition:none!important}
+  .pattern-card:hover,.pattern-card:active,.pattern-card:hover .pattern-thumb img,.btn:active,.overview-photo:hover{
+    transform:none!important
+  }
+  .hero-art .illustration::before,.hero-art .illustration::after,.hero-art .floating-star,.hero-art .floating-heart{animation:none!important}
+}

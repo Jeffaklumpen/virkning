@@ -135,8 +135,8 @@ test('fast shell, on-demand encrypted assets and catalogue match', () => {
   assert.doesNotMatch(html,/<script\s*>/i);
   assert.match(source('manifest.webmanifest'),/"display": "standalone"/);
   for(const file of ['js/app.js','js/storage.js','js/crypto.js','js/patterns.js',
-    'js/estimates.js','js/guide-loader.js','js/views.js','js/overview.js','js/previews.js','js/pwa.js',
-    'css/base.css','css/components.css','css/theme.css','data/pattern-catalog.json']) {
+    'js/estimates.js','js/guide-loader.js','js/views.js','js/overview.js','js/previews.js','js/motion.js','js/pwa.js',
+    'css/base.css','css/components.css','css/theme.css','css/motion.css','data/pattern-catalog.json']) {
     assert.ok(html.includes(file)||file.endsWith('.json'),file+' missing from HTML');
     assert.ok(sw.includes(file),file+' missing from offline shell');
   }
@@ -500,4 +500,76 @@ test('overview back-to-top button is accessible, scroll-aware and works on iPad'
   assert.match(css,/@media\(max-width:700px\)/);
   assert.match(source('index.html'),/js\/app.js\?v=overview-v2/);
   assert.match(source('service-worker.js'),/sunbeam-art-offline-v18/);
+});
+
+test('screen transitions preserve immediate rendering and guide-step controls', () => {
+  const win={matchMedia:()=>({matches:false}),scrollTo:()=>{win.scrolled=(win.scrolled||0)+1}};
+  const doc={documentElement:{dataset:{}}};
+  runInNewContext(source('js/motion.js'),{window:win,document:doc,Promise});
+  const animations=[];
+  const panel={animate:(frames,settings)=>{
+    animations.push({target:'panel',frames,settings});
+    return {cancel(){}};
+  }};
+  const shell={
+    innerHTML:'',dataset:{},
+    animate:(frames,settings)=>{
+      animations.push({target:'shell',frames,settings});
+      return {cancel(){}};
+    },
+    querySelector:(selector)=>selector==='.step-panel'?panel:null
+  };
+  let attached=0;
+  win.SunbeamMotion.render(shell,'<section>Login</section>','login',{afterMount:()=>attached++});
+  assert.equal(shell.innerHTML,'<section>Login</section>');
+  assert.equal(attached,1);
+  win.SunbeamMotion.render(shell,'<section>Shelf</section>','library');
+  assert.equal(shell.dataset.motionView,'library');
+  win.SunbeamMotion.render(shell,'<section>Step 1</section>','guide');
+  win.SunbeamMotion.render(shell,'<section>Step 2</section>','guide',{direction:'back'});
+  assert.equal(shell.innerHTML,'<section>Step 2</section>');
+  assert.equal(animations.at(-1).target,'panel');
+  assert.match(animations.at(-1).frames[0].transform,/translate3d\\(-13px/);
+  assert.equal(win.scrolled,4);
+});
+
+test('native page crossfades are optional and reduced motion disables animation', () => {
+  const doc={documentElement:{dataset:{}},startViewTransition(update){
+    update();
+    return {finished:Promise.resolve(),skipTransition(){}};
+  }};
+  let animateCalls=0;
+  const shell={dataset:{motionView:'guide'},innerHTML:'',
+    animate(){animateCalls++;return {cancel(){}};},querySelector(){return null;}};
+  const win={matchMedia:()=>({matches:false}),scrollTo(){}};
+  runInNewContext(source('js/motion.js'),{window:win,document:doc,Promise});
+  win.SunbeamMotion.render(shell,'Overview content','overview');
+  assert.equal(shell.innerHTML,'Overview content');
+  assert.equal(animateCalls,0,'native crossfade replaces fallback animation');
+  const reducedWin={matchMedia:()=>({matches:true}),scrollTo(){}};
+  runInNewContext(source('js/motion.js'),{window:reducedWin,document:doc,Promise});
+  shell.dataset.motionView='overview';
+  reducedWin.SunbeamMotion.render(shell,'Guide content','guide');
+  assert.equal(shell.innerHTML,'Guide content');
+  assert.equal(animateCalls,0,'reduced motion skips all animations');
+});
+
+test('all screens load accessible lightweight motion assets without changing private content', () => {
+  const html=source('index.html'),app=source('js/app.js');
+  const css=source('css/motion.css'),sw=source('service-worker.js');
+  assert.ok(html.includes('js/motion.js?v=motion-v1'));
+  assert.ok(html.includes('css/motion.css?v=motion-v1'));
+  assert.ok(html.indexOf('js/motion.js?')<html.indexOf('js/app.js?'));
+  assert.match(app,/swapView\\(el,window.SunbeamViews.login/);
+  assert.match(app,/swapView\\(el,window.SunbeamViews.library/);
+  assert.match(app,/swapView\\(el,window.SunbeamViews.guide/);
+  assert.match(app,/swapView\\(el,window.SunbeamOverview.render/);
+  assert.match(app,/swapView\\(el,window.SunbeamViews.finished/);
+  assert.match(app,/swapView\\(el,'<section class="library-empty"/);
+  assert.match(css,/::view-transition-old\\(sunbeam-page\\)/);
+  assert.match(css,/prefers-reduced-motion:reduce/);
+  assert.match(css,/\\.dialog-backdrop/);
+  assert.match(sw,/sunbeam-art-offline-v19/);
+  assert.match(sw,/\\.\\/js\\/motion\\.js/);
+  assert.match(sw,/\\.\\/css\\/motion\\.css/);
 });
