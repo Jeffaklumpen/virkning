@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#FFFAF2" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Sunbeam Art" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="Sunbeam Art" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/sunbeam-icon-180.png" />
   <meta name="description" content="Sunbeam Art — a sunny little home for Kimsi's crochet patterns, handmade friends, and every cozy stitch." />
   <title>Sunbeam Art ☀ | Kimsi's crochet corner</title>
   <link rel="icon" type="image/svg+xml" href="assets/sunbeam-bee.svg" />
@@ -25,5 +31,13 @@
   <script src="encrypted-guides.js?v=tooth-real-photos-v3" defer></script>
   <script src="auth-config.js?v=kimsi-password-v2" defer></script>
   <script src="app.js?v=20261023-pattern-hive" defer></script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js', {scope: './'}).catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
