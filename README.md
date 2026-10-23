@@ -66,3 +66,9 @@ The home screen loads only the small public catalogue, app modules and design as
 Catalogue cards show a generic preview until a guide has been opened once. The app then saves a small **encrypted** cover preview on the device, allowing the original cover to display on later visits without decrypting the full guide. Purchased images remain inside the protected payload. Progress percentages from earlier opens are remembered without scanning all saved ciphertext on every launch.
 
 Run `node --test tests/smoke.test.mjs` to check the public catalogue, module dependencies, encryption storage and navigation templates.
+
+## Original photos and Donut Kitty recovery
+
+The grid never deliberately substitutes decorative drawings for pattern photos. After unlocking, it uses encrypted on-device photo previews immediately and automatically downloads/decrypts missing encrypted guides in the background to create real previews (the first visit can take longer and show “Loading photo…”). The downloaded guides remain encrypted in IndexedDB for offline use. This intentionally trades some initial network use for original photos without manually opening every pattern.
+
+Donut Kitty was removed from the public repository because its previous plaintext file was unsafe. If the existing Donut guide cannot be opened on an older iPad, use the **Donut Kitty-only recovery picker** and select the original `Donut-Kitty-Kimsi-Guide.json` export. The browser validates its id and embedded photos, encrypts it locally using the existing master key, and leaves `kimsi-progress:donut-kitty` unchanged. No general import feature or publicly accessible paid pattern file is restored.
