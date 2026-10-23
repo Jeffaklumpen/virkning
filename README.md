@@ -15,11 +15,12 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `config/auth-config.js` — public PBKDF2 key-wrapping parameters
 - `data/encrypted/tooth.js` — encrypted Little Tooth guide
 - `data/encrypted/bunny/` — encrypted Baby Boba Bunny (12 high-resolution parts and loader)
+- `data/encrypted/appa/` — encrypted Baby Appa guide (23 high-resolution ciphertext parts and loader)
 - `assets/` — app icons and decorative SVGs
 
 ## Important privacy notes
 
-This repository and its static hosting are **public**. The site's client-side password protects the encrypted Little Tooth and Baby Boba Bunny payloads, but it is **not server authentication**. An attacker can download those ciphertexts and attempt offline password guesses. Use a long, unique password for meaningful protection.
+This repository and its static hosting are **public**. The site's client-side password protects the encrypted Little Tooth, Baby Boba Bunny and Baby Appa payloads, but it is **not server authentication**. An attacker can download those ciphertexts and attempt offline password guesses. Use a long, unique password for meaningful protection.
 
 The legacy `private-guide.js` contained an **unencrypted purchased Donut Kitty guide**, so it has been removed from the current repository tree and site. **Past Git commits, forks, and third-party caches may still contain the original plaintext.** Deleting a file in a new commit cannot erase Git history. Do not assume this original content is fully private.
 

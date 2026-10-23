@@ -4,6 +4,7 @@
 
 - Little Tooth: AES-256-GCM encrypted gzip JSON stored in `data/encrypted/tooth.js`
 - Baby Boba Bunny: AES-256-GCM encrypted gzip JSON split across numbered files in `data/encrypted/bunny/`
+- Baby Appa (Huniebeecrafts): AES-256-GCM encrypted gzip JSON including individual high-resolution reference photos in `data/encrypted/appa/` (23 parts and loader). Includes 62 steps and source color-coded round strips.
 - Donut Kitty: **not bundled** because the previous public asset was unencrypted; already installed copies in IndexedDB remain available, and local import is supported.
 
 ## Add or upgrade a guide safely

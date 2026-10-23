@@ -125,7 +125,9 @@ test('all local scripts/styles are cached and inline JavaScript stays disabled',
   assert.doesNotMatch(html, /<script\s*>/i);
   for (const file of [
     'js/app.js','js/storage.js','js/crypto.js','js/patterns.js','js/pwa.js',
-    'css/base.css','css/components.css','css/theme.css'
+    'css/base.css','css/components.css','css/theme.css',
+    ...Array.from({length:23},(_,i) => 'data/encrypted/appa/part-' + String(i+1).padStart(2,'0') + '.js'),
+    'data/encrypted/appa/loader.js'
   ]) {
     assert.ok(html.includes(file), file + ' missing from HTML');
     assert.ok(sw.includes(file), file + ' missing from cache');
