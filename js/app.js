@@ -4,10 +4,10 @@
   const $=(s)=>document.querySelector(s);
   const el=$('#app');
   const modal=$('#modal-root');
-  let patterns=[], loadedPatterns=new Map(), activeId=null, activeStep=null, activeGroup=null, progress={}, authKey=null, patternKey=null, loadingToken=0;
+  let patterns=[], loadedPatterns=new Map(), activeId=null, activeStep=null, activeGroup=null, progress={}, authKey=null, patternKey=null, loadingToken=0, previewImages=new Map();
   const {esc, icon, picture, validPattern, stepsFor, groupSteps, stats} = window.SunbeamPatterns;
   const {baseProgress, loadProgress, persistProgress, setGuideKey,
-    getGuide, listStoredIds, storeGuide, savedAuthKey, rememberAuthKey, forgetAuthKey} = window.SunbeamStorage;
+    getGuide, listStoredIds, storeGuide, storePreview, getPreviews, savedAuthKey, rememberAuthKey, forgetAuthKey} = window.SunbeamStorage;
   const {derivePasswordKey, unwrapPrivatePatternKey, decryptGuide} = window.SunbeamCrypto;
   const {estimateTime} = window.SunbeamEstimates;
   function persist() {
@@ -29,7 +29,7 @@
   async function enterLibrary(loginKey){
   const key=await unwrapPrivatePatternKey(loginKey);
   setGuideKey(key);
-  const [entries,localIds]=await Promise.all([window.SunbeamGuides.catalog(),listStoredIds()]);
+  const [entries,localIds,previews]=await Promise.all([window.SunbeamGuides.catalog(),listStoredIds(),getPreviews().catch(()=>({}))]);
   const known=new Set(entries.map(e=>e.id));
   const local=localIds.filter(id=>!known.has(id)).map(id=>({
     id,title:id==='donut-kitty'?'Donut Kitty':id.replace(/-/g,' '),
@@ -37,6 +37,7 @@
   }));
   patterns=[...entries,...local];
   loadedPatterns=new Map();
+  previewImages=new Map(Object.entries(previews));
   patternKey=key;authKey=loginKey;
   renderLibrary();
 }
@@ -64,7 +65,7 @@
   if(!authKey)return renderLogin();
   loadingToken++;activeId=null;activeStep=null;
   const started=patterns.map(meta=>{
-    const p=loadedPatterns.get(meta.id)||meta;
+    const p=loadedPatterns.get(meta.id)||(previewImages.has(meta.id)?{...meta,preview:previewImages.get(meta.id)}:meta);
     const pr=loadProgress(meta.id);
     const n=loadedPatterns.has(meta.id)?stats(p,pr):(pr.knownStats||{total:0,complete:0,percent:0});
     return {p,pr,n,time:estimateTime(p,pr)};
@@ -118,6 +119,11 @@
       }
       if(!validPattern(guide))throw Error('Pattern is unavailable');
       loadedPatterns.set(id,guide);
+    }
+    if(!previewImages.has(id)){
+      window.SunbeamPreviews.create(guide).then(async image=>{
+        if(image){await storePreview(id,image);previewImages.set(id,image)}
+      }).catch(()=>{});
     }
     if(token!==loadingToken)return;
     progress=loadProgress(id);renderGuide();
