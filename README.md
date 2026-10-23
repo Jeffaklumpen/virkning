@@ -9,6 +9,7 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `js/app.js` — login, state, navigation, and interactive crochet actions
 - `js/views.js` — library, guide and completion HTML templates
 - `js/guide-loader.js` — small public catalogue and on-demand encrypted-file loader
+- `js/previews.js` — creates compact on-device cover previews after a pattern opens
 - `data/pattern-catalog.json` — metadata and ordered assets for all bundled guides
 - `js/storage.js` — encrypted on-device patterns, remembered login and progress
 - `js/crypto.js` — password-derived keys and encrypted pattern decryption
@@ -62,6 +63,6 @@ Cards in Your Pattern Hive and each pattern header display an approximate range 
 
 The home screen loads only the small public catalogue, app modules and design assets. Encrypted guide payloads (and their full-size photos) are **not** downloaded on app startup. Opening a guide retrieves its encrypted parts once, decrypts that guide only and saves it encrypted in IndexedDB. On the same iPad, it can subsequently open from local storage without another network request. The service worker also caches requested parts for offline access. A new guide requires one online opening before it is available offline.
 
-Catalogue cards show a generic preview until the guide has been opened in the current session; purchased images remain inside the protected payload. Progress percentages from earlier opens are remembered without scanning all saved ciphertext on every launch.
+Catalogue cards show a generic preview until a guide has been opened once. The app then saves a small **encrypted** cover preview on the device, allowing the original cover to display on later visits without decrypting the full guide. Purchased images remain inside the protected payload. Progress percentages from earlier opens are remembered without scanning all saved ciphertext on every launch.
 
 Run `node --test tests/smoke.test.mjs` to check the public catalogue, module dependencies, encryption storage and navigation templates.
