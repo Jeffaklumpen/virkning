@@ -10,6 +10,7 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `js/storage.js` — encrypted on-device patterns, remembered login and progress
 - `js/crypto.js` — password-derived keys and encrypted pattern decryption
 - `js/patterns.js` — shared pattern selectors and output escaping
+- `js/estimates.js` — editorial time ranges for projects and selectable variants
 - `js/pwa.js` — standalone service-worker registration
 - `css/base.css`, `css/components.css`, `css/theme.css` — foundations, interface components, brand and responsive overrides
 - `config/auth-config.js` — public PBKDF2 key-wrapping parameters
@@ -49,3 +50,7 @@ See [SECURITY.md](SECURITY.md) for threat model, password rotation limitations a
 The `Cute Loaf Cat Plushies` guide has two selectable options: **Solid Color** and **Spotted**. Individual steps can specify `variant`, and only the currently selected variant appears in navigation. Completion tracking uses unique step IDs, so switching does not delete previous completion. Color underlining from the PDF is preserved in encrypted, enlargable reference-chart images.
 
 The visible **Log out** button has been removed on request; remembered login and invalid-key recovery remain available.
+
+## Time estimates
+
+Cards in Your Pattern Hive and each pattern header display an approximate range of **active crafting hours**. The ranges account for crocheting, stuffing, yarn changes, details and assembly for a hobby crocheter; they are not generated from a timer, are not precise, and vary with experience and yarn size. They are stored separately in `js/estimates.js` as public metadata and do not expose the underlying protected pattern instructions. Cute Loaf Cat uses distinct estimates for the solid and spotted variants. New or unknown patterns do not display a made-up time estimate until reviewed.

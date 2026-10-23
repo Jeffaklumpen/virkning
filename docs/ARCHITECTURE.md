@@ -26,3 +26,7 @@ Do not change existing guide IDs. Completion entries are stored in localStorage 
 ## Selectable pattern variants
 
 `variants` on a pattern enumerates options, and optional `variant` on each step selects which instructions are shown. `SunbeamPatterns.stepsFor` and `groupSteps` filter by `progress.variantOption` in addition to the existing ear option. `choose-style` renders style selectors. Shared steps omit `variant`; switching never removes progress saved under the existing pattern ID.
+
+## Crafting time labels
+
+Public, editorial time ranges are defined in `js/estimates.js` and loaded before `js/app.js`. Labels appear on grid cards and inside guide headers. The selected variation is read from saved progress; unrelated guide instructions remain encrypted. Include expected crochet time, colorwork, stuffing, embroidery, and finishing. Never infer a plausible-looking hour count for unfamiliar imported guides without reviewing their instructions.

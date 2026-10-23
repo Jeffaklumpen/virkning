@@ -124,7 +124,7 @@ test('all local scripts/styles are cached and inline JavaScript stays disabled',
   assert.match(html, /Content-Security-Policy/);
   assert.doesNotMatch(html, /<script\s*>/i);
   for (const file of [
-    'js/app.js','js/storage.js','js/crypto.js','js/patterns.js','js/pwa.js',
+    'js/app.js','js/storage.js','js/crypto.js','js/patterns.js','js/estimates.js','js/pwa.js',
     'css/base.css','css/components.css','css/theme.css',
     ...Array.from({length:23},(_,i) => 'data/encrypted/appa/part-' + String(i+1).padStart(2,'0') + '.js'),
     'data/encrypted/appa/loader.js',
@@ -159,4 +159,39 @@ test('variant-specific steps preserve separate completion', () => {
 });
 test('sign out UI has been removed', () => {
  assert.doesNotMatch(source('js/app.js'),/data-action="sign-out"|case 'sign-out'|>Log out</);
+});
+
+
+test('all included projects have sensible planning estimates', () => {
+  const window = {};
+  runInNewContext(source('js/estimates.js'), {window});
+  const estimate = window.SunbeamEstimates;
+  const patterns = [
+    'sambrosis-tooth','sweetpeaplush-baby-boba-bunny','huniebeecrafts-baby-appa',
+    'oakandmarlow-brie-mouse','annie-carraway-cute-loaf-cat','donut-kitty'
+  ];
+  for (const id of patterns) {
+    const range = estimate.estimateFor({id}, {variantOption:'solid'});
+    assert.ok(range && range.min >= 1 && range.max > range.min, id);
+    assert.match(estimate.estimateTime({id}), /^\\d+–\\d+ hours$/);
+  }
+  assert.equal(estimate.estimateTime({id:'annie-carraway-cute-loaf-cat'}, {variantOption:'solid'}), '2–4 hours');
+  assert.equal(estimate.estimateTime({id:'annie-carraway-cute-loaf-cat'}, {variantOption:'spotted'}), '3–5 hours');
+  assert.equal(estimate.estimateTime({id:'unfamiliar-guide'}), null);
+});
+
+test('time estimates and requested navigation copy display consistently', () => {
+  const html = source('index.html');
+  const app = source('js/app.js');
+  const css = source('css/components.css');
+  assert.match(html, /id="i-clock"/);
+  assert.ok(html.indexOf('js/estimates.js?') < html.indexOf('js/app.js?'));
+  assert.match(app, /pattern-time/);
+  assert.match(app, /guide-time/);
+  assert.match(app, /Find your next project or continue where you left off\./);
+  assert.match(app, /Back to patterns/);
+  assert.match(app, /<strong>Sections<\/strong>/);
+  assert.doesNotMatch(app, /Your sunny journey|Back to the pattern garden|A growing garden of lovely little handmade friends/);
+  assert.match(css, /\.pattern-time/);
+  assert.match(css, /\.guide-time/);
 });

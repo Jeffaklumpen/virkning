@@ -1400,3 +1400,64 @@
 
 }
 
+
+/* Calm, compact project-time labels for pattern cards and guide headers. */
+.pattern-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  margin: 12px 0 0;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: #fff5df;
+  color: #795a35;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.pattern-time .small-icon,
+.guide-time-main .small-icon {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+.pattern-time span { overflow-wrap: anywhere; }
+.pattern-time strong,
+.guide-time-main strong { font-weight: 850; }
+.guide-time {
+  margin-top: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.guide-time-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 8px 11px;
+  background: #fff0d2;
+  color: #775731;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.estimate-note {
+  color: #8d7863;
+  font-size: 11px;
+  line-height: 1.5;
+  max-width: 360px;
+}
+@media (max-width: 700px) {
+  .pattern-time {
+    margin-top: 9px;
+    padding: 6px 8px;
+    font-size: 11px;
+    gap: 5px;
+  }
+  .guide-time { margin-top: 9px; }
+  .guide-time-main { font-size: 12px; padding: 7px 9px; gap: 6px; }
+  .estimate-note { font-size: 10px; }
+}
