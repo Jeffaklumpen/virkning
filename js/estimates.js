@@ -6,6 +6,7 @@
   'use strict';
 
   const ESTIMATES = Object.freeze({
+    'mrsgeegees-luna-the-druid': {min: 18, max: 30},
     'sambrosis-tooth': {min: 3, max: 5},
     'frauskau-pooh-snuggler': {min: 7, max: 12},
     'krochet-by-kris-easter-bunny-bundle': {min: 16, max: 26},

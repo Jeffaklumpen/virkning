@@ -50,3 +50,5 @@ are necessary. Bump the service-worker cache version when changing the bundle.
 - Plush Mermaid Mod (Oak and Marlow): encrypted Fable Collection add-on, with 3 selectable styles, all 8 PDF pages as protected references, and original reference photos. A separate animal pattern is required. ID: `oakandmarlow-plush-mermaid-mod`.
 
 - Pooh Snuggler (frauskau.dk): 16-page AES-256-GCM/gzip encrypted personal pattern, 33 interactive steps, ten sections and 16 protected, zoomable original PDF pages. ID: `frauskau-pooh-snuggler`. The PDF and original source must not be committed.
+
+- Luna the Druid (Gabriele Keppeler / mrs.geegee.s): 22-page encrypted personal guide, 44 navigable steps, 12 sections and 22 protected original PDF-page references. ID: `mrsgeegees-luna-the-druid`. Never commit plaintext/PDF, and respect the designer's redistribution restrictions.
