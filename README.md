@@ -71,7 +71,7 @@ Run `node --test tests/smoke.test.mjs` to check the public catalogue, module dep
 
 The grid displays original photographs rather than illustrated substitutes. After unlocking, it uses encrypted previews from device storage or downloads the lightweight encrypted cover bundle. The first visit can briefly show “Loading photo…” while those photos are decrypted. Full guides are only downloaded when opened.
 
-Removing a guide from the visible library does not delete saved progress or encrypted local records. Seven bundled patterns appear in the app; older device data is preserved for safety.
+Removing a guide from the visible library does not delete saved progress or encrypted local records. Eight bundled patterns appear in the app; older device data is preserved for safety.
 
 ## Full pattern overview
 
@@ -82,3 +82,7 @@ The overview respects the saved ear-method and solid/spotted variant selection, 
 ## Easter Bunny Bundle
 
 Krochet by Kris’s 43-page Easter Bunny Bundle is one protected guide with separate Carrot, Bunny and Carrot Hat sections, all 43 original pages preserved as zoomable high-resolution references, and full text for each page. It includes a materials checklist, Classic White/Patchwork color selection, and the designer's long/short limb and skinny/big ear instructions. Only ciphertext is committed; the original PDF is not. The estimated 16–26 active hours covers making all three items.
+
+## Plush Mermaid Mod (Oak and Marlow)
+
+The eight-page Plush Mermaid Mod is a protected Fable Collection accessory, **not a standalone animal pattern**. It requires an existing Fable Collection animal base pattern for the head, arms and body. The guide offers 32 crochet steps in six sections, original PDF reference pages and 21 separate original instructional photographs (29 protected images total), and three selectable looks: Shell Top, High Waist Tail and Tankini Top. Completion remains keyed to stable step IDs across style changes. The estimated 2–4 active hours cover the mermaid-tail modification only; the animal base is extra. The source PDF and unencrypted images must never be committed.

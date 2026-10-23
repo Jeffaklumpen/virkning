@@ -208,6 +208,12 @@
       if(token!==loadingToken)return;
       loadedPatterns.set(id,guide);
       progress=loadProgress(id);
+      // Initialize the correct default for each guide's own style choices.
+      // Retain stored selections and completion for pre-existing guides.
+      if (Array.isArray(guide.variants) && guide.variants.length &&
+          !guide.variants.some(v=>v.id===progress.variantOption)) {
+        progress.variantOption=guide.variants[0].id;
+      }
       renderGuide();
       void saveRealPhotoPreview(id,guide).catch(()=>{});
     }catch(error){
