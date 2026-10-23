@@ -39,10 +39,7 @@ jobs:
           `;
           await writeFile('tests/smoke.test.mjs',tests);
           let worker=await readFile('service-worker.js','utf8');
-          if(!worker.includes('sunbeam-art-offline-v16')||!worker.includes('"./config/auth-config.js"'))throw Error('Unexpected service worker structure');
-          worker=worker.replace('sunbeam-art-offline-v16','sunbeam-art-offline-v17')
-            .replace('"./config/auth-config.js",','"./config/auth-config.js",\n  "./config/donut-envelope.json",');
-          await writeFile('service-worker.js',worker);
+          if(!worker.includes('sunbeam-art-offline-v17')||!worker.includes('./config/donut-envelope.json'))throw Error('Donut envelope is not precached');
           let readme=await readFile('README.md','utf8');
           readme=readme.replace('Only the five bundled patterns appear in the app','Six bundled patterns appear in the app');
           readme=readme.replace('for all five photos','for the original five photos, plus the new Donut Kitty cover');
