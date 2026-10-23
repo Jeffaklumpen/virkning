@@ -498,8 +498,8 @@ test('overview back-to-top button is accessible, scroll-aware and works on iPad'
   assert.match(css,/\.overview-to-top\[hidden\]\{display:none\}/);
   assert.match(css,/safe-area-inset-bottom/);
   assert.match(css,/@media\(max-width:700px\)/);
-  assert.match(source('index.html'),/js\/app.js\?v=overview-v2/);
-  assert.match(source('service-worker.js'),/sunbeam-art-offline-v18/);
+  assert.match(source('index.html'),/js\/app.js\?v=motion-v1/);
+  assert.match(source('service-worker.js'),/sunbeam-art-offline-v19/);
 });
 
 test('screen transitions preserve immediate rendering and guide-step controls', () => {
@@ -529,7 +529,7 @@ test('screen transitions preserve immediate rendering and guide-step controls', 
   win.SunbeamMotion.render(shell,'<section>Step 2</section>','guide',{direction:'back'});
   assert.equal(shell.innerHTML,'<section>Step 2</section>');
   assert.equal(animations.at(-1).target,'panel');
-  assert.match(animations.at(-1).frames[0].transform,/translate3d\\(-13px/);
+  assert.match(animations.at(-1).frames[0].transform,/translate3d\(-13px/);
   assert.equal(win.scrolled,4);
 });
 
@@ -560,16 +560,16 @@ test('all screens load accessible lightweight motion assets without changing pri
   assert.ok(html.includes('js/motion.js?v=motion-v1'));
   assert.ok(html.includes('css/motion.css?v=motion-v1'));
   assert.ok(html.indexOf('js/motion.js?')<html.indexOf('js/app.js?'));
-  assert.match(app,/swapView\\(el,window.SunbeamViews.login/);
-  assert.match(app,/swapView\\(el,window.SunbeamViews.library/);
-  assert.match(app,/swapView\\(el,window.SunbeamViews.guide/);
-  assert.match(app,/swapView\\(el,window.SunbeamOverview.render/);
-  assert.match(app,/swapView\\(el,window.SunbeamViews.finished/);
-  assert.match(app,/swapView\\(el,'<section class="library-empty"/);
-  assert.match(css,/::view-transition-old\\(sunbeam-page\\)/);
+  assert.match(app,/swapView\(el,window.SunbeamViews.login/);
+  assert.match(app,/swapView\(el,window.SunbeamViews.library/);
+  assert.match(app,/swapView\(el,window.SunbeamViews.guide/);
+  assert.match(app,/swapView\(el,window.SunbeamOverview.render/);
+  assert.match(app,/swapView\(el,window.SunbeamViews.finished/);
+  assert.match(app,/swapView\(el,'<section class="library-empty"/);
+  assert.match(css,/::view-transition-old\(sunbeam-page\)/);
   assert.match(css,/prefers-reduced-motion:reduce/);
-  assert.match(css,/\\.dialog-backdrop/);
+  assert.match(css,/\.dialog-backdrop/);
   assert.match(sw,/sunbeam-art-offline-v19/);
-  assert.match(sw,/\\.\\/js\\/motion\\.js/);
-  assert.match(sw,/\\.\\/css\\/motion\\.css/);
+  assert.match(sw,/\.\/js\/motion\.js/);
+  assert.match(sw,/\.\/css\/motion\.css/);
 });
