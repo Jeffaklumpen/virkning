@@ -226,3 +226,41 @@ a{color:#9D671D}
 @media(prefers-reduced-motion:reduce){
   .hero-bee,.hero-art .illustration::before{animation:none}
 }
+
+/* Emoji-safe sparkle shapes: iPad must never render a colored font emoji here. */
+.hero-art .illustration::after {
+  content:"";
+  position:absolute;
+  top:22px;
+  right:10px;
+  width:23px;
+  height:23px;
+  background:#E8AD3F;
+  clip-path:polygon(50% 0%,60% 39%,100% 50%,60% 61%,50% 100%,40% 61%,0% 50%,40% 39%);
+  font-size:0;
+  line-height:0;
+}
+.hero-art .floating-star {
+  font-size:0;
+  display:block;
+  width:25px;
+  height:25px;
+  background:#E6AC3C;
+  clip-path:polygon(50% 0%,59% 40%,100% 50%,59% 60%,50% 100%,41% 60%,0% 50%,41% 40%);
+}
+.bee-flight-dots {
+  font-size:0;
+  width:65px;
+  height:28px;
+}
+.bee-flight-dots::before,.bee-flight-dots::after {
+  content:"";
+  position:absolute;
+  width:18px;
+  height:18px;
+  top:3px;
+  background:#E3B759;
+  clip-path:polygon(50% 0%,59% 40%,100% 50%,59% 60%,50% 100%,41% 60%,0% 50%,41% 40%);
+}
+.bee-flight-dots::before{left:0}
+.bee-flight-dots::after{right:4px;width:11px;height:11px;top:13px;background:#C9ADDC}
