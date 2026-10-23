@@ -1,7 +1,7 @@
 /* Run: node --test tests/smoke.test.mjs (Node 20+; no dependencies). */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,existsSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {webcrypto} from 'node:crypto';
 
@@ -40,6 +40,7 @@ function fakeIndexedDB() {
               };
               tx.objectStore = () => ({
                 getAll: () => execute(() => [...stores.get(key).values()]),
+                getAllKeys: () => execute(() => [...stores.get(key).keys()]),
                 get: id => execute(() => stores.get(key).get(id)),
                 put: (value, id) => execute(() => stores.get(key).set(id ?? value.id, value)),
                 delete: id => execute(() => stores.get(key).delete(id))
@@ -104,6 +105,8 @@ test('guide encryption, legacy migration, progress and sign-out preserve data sa
   records.set('legacy', {id:'legacy',title:'Previously local',groups:[]});
   const guides = await store.getAllGuides();
   assert.equal(guides.length, 2);
+  assert.deepEqual(await store.listStoredIds(), ['test-guide','legacy']);
+  assert.equal((await store.getGuide('test-guide')).title,'Sensitive pattern');
   assert.ok(records.get('legacy').ciphertext);
   assert.equal(records.get('legacy').title, undefined);
   const progress = {...store.baseProgress(),done:{'first':true}};
@@ -118,27 +121,34 @@ test('guide encryption, legacy migration, progress and sign-out preserve data sa
   assert.equal(store.loadProgress('test-guide').done.first, true);
 });
 
-test('all local scripts/styles are cached and inline JavaScript stays disabled', () => {
-  const html = source('index.html');
-  const sw = source('service-worker.js');
-  assert.match(html, /Content-Security-Policy/);
-  assert.doesNotMatch(html, /<script\s*>/i);
-  for (const file of [
-    'js/app.js','js/storage.js','js/crypto.js','js/patterns.js','js/estimates.js','js/pwa.js',
-    'css/base.css','css/components.css','css/theme.css',
-    ...Array.from({length:23},(_,i) => 'data/encrypted/appa/part-' + String(i+1).padStart(2,'0') + '.js'),
-    'data/encrypted/appa/loader.js',
-    ...Array.from({length:22},(_,i) => 'data/encrypted/brie/part-' + String(i+1).padStart(2,'0') + '.js'),
-    'data/encrypted/brie/loader.js',
-    ...Array.from({length:34},(_,i)=>'data/encrypted/loaf/part-'+String(i+1).padStart(2,'0')+'.js'),
-    'data/encrypted/loaf/loader.js'
-  ]) {
-    assert.ok(html.includes(file), file + ' missing from HTML');
-    assert.ok(sw.includes(file), file + ' missing from cache');
+test('fast shell, on-demand encrypted assets and catalogue match', () => {
+  const html=source('index.html');
+  const sw=source('service-worker.js');
+  const catalog=JSON.parse(source('data/pattern-catalog.json'));
+  assert.equal(catalog.length,5);
+  assert.match(html,/Content-Security-Policy/);
+  assert.doesNotMatch(html,/<script\s*>/i);
+  assert.match(source('manifest.webmanifest'),/"display": "standalone"/);
+  for(const file of ['js/app.js','js/storage.js','js/crypto.js','js/patterns.js',
+    'js/estimates.js','js/guide-loader.js','js/views.js','js/pwa.js',
+    'css/base.css','css/components.css','css/theme.css','data/pattern-catalog.json']) {
+    assert.ok(html.includes(file)||file.endsWith('.json'),file+' missing from HTML');
+    assert.ok(sw.includes(file),file+' missing from offline shell');
   }
-  assert.match(source('manifest.webmanifest'), /"display": "standalone"/);
+  const ids=new Set();
+  for(const guide of catalog) {
+    assert.ok(!ids.has(guide.id),'duplicate guide '+guide.id);
+    ids.add(guide.id);
+    assert.ok(guide.assets.length>0);
+    for(const path of guide.assets) {
+      assert.ok(existsSync(new URL('../'+path,import.meta.url)),path+' not found');
+      assert.ok(!html.includes(path),path+' should be lazy');
+      assert.ok(!sw.includes(path),path+' should not precache');
+    }
+  }
+  assert.match(source('js/guide-loader.js'),/script\.async=false/);
+  assert.match(source('js/app.js'),/SunbeamGuides\.load/);
 });
-
 
 test('manual private-pattern import interface and handlers are absent', () => {
   const html = source('index.html');
@@ -183,15 +193,52 @@ test('all included projects have sensible planning estimates', () => {
 test('time estimates and requested navigation copy display consistently', () => {
   const html = source('index.html');
   const app = source('js/app.js');
+  const view = source('js/views.js');
   const css = source('css/components.css');
   assert.match(html, /id="i-clock"/);
   assert.ok(html.indexOf('js/estimates.js?') < html.indexOf('js/app.js?'));
-  assert.match(app, /pattern-time/);
-  assert.match(app, /guide-time/);
-  assert.match(app, /Find your next project or continue where you left off\./);
-  assert.match(app, /Back to patterns/);
-  assert.match(app, /<strong>Sections<\/strong>/);
-  assert.doesNotMatch(app, /Your sunny journey|Back to the pattern garden|A growing garden of lovely little handmade friends/);
+  assert.match(view, /pattern-time/);
+  assert.match(view, /guide-time/);
+  assert.match(view, /Find your next project or continue where you left off\./);
+  assert.match(view, /Back to patterns/);
+  assert.match(view, /<strong>Sections<\/strong>/);
+  assert.doesNotMatch(view, /Your sunny journey|Back to the pattern garden|A growing garden of lovely little handmade friends/);
   assert.match(css, /\.pattern-time/);
   assert.match(css, /\.guide-time/);
+});
+
+test('library presentation works with catalogue entries before decrypting guides', () => {
+  const {window}=sandbox();
+  runInNewContext(source('js/estimates.js'),{window},{filename:'js/estimates.js'});
+  runInNewContext(source('js/views.js'),{window},{filename:'js/views.js'});
+  const meta={id:'huniebeecrafts-baby-appa',title:'Baby Appa',designer:'Huniebeecrafts'};
+  const html=window.SunbeamViews.library([{p:meta,pr:{},n:{percent:0},time:'12–18 hours'}],1);
+  assert.match(html,/Baby Appa/);
+  assert.match(html,/12–18 hours/);
+  assert.match(html,/pattern-thumb-placeholder/);
+  const guide={...meta,groups:[{id:'body',title:'Body',steps:[{id:'first',title:'First',instruction:'Single crochet'}]}]};
+  const state={done:{},materials:{},earOption:'2',variantOption:'solid'};
+  const markup=window.SunbeamViews.guide(guide,state,'body','first',
+    {...guide.groups[0].steps[0],groupId:'body',groupTitle:'Body'},
+    [{...guide.groups[0].steps[0],groupId:'body',groupTitle:'Body'}],
+    {percent:0,complete:0,total:1},0);
+  assert.match(markup,/Single crochet/);
+  assert.match(markup,/Back to patterns/);
+});
+
+test('login can display an unloaded pattern catalogue without fetching encrypted payloads', async () => {
+  const catalog=JSON.parse(source('data/pattern-catalog.json'));
+  const window={};
+  let fetched=0, inserted=0;
+  const fetch=async url=>{
+    fetched++;
+    assert.equal(url,'./data/pattern-catalog.json');
+    return {ok:true,json:async()=>catalog};
+  };
+  const document={createElement(){inserted++;return {};},head:{appendChild(){}}};
+  runInNewContext(source('js/guide-loader.js'),{window,fetch,document,Map,Set,Promise});
+  const entries=await window.SunbeamGuides.catalog();
+  assert.equal(entries.length,5);
+  assert.equal(fetched,1);
+  assert.equal(inserted,0);
 });

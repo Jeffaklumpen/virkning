@@ -132,8 +132,33 @@
       });
     } catch { /* Requiring a password again is the safe fallback. */ }
   }
+  function listStoredIds(){
+ return dbOpen().then(db=>new Promise((resolve,reject)=>{
+   const tx=db.transaction(STORE,'readonly');
+   const request=tx.objectStore(STORE).getAllKeys();
+   request.onsuccess=()=>resolve((request.result||[]).map(String));
+   request.onerror=()=>reject(request.error);
+   tx.oncomplete=()=>db.close();
+   tx.onerror=()=>db.close();
+ }));
+}
+  async function getGuide(id){
+ const db=await dbOpen();
+ const record=await new Promise((resolve,reject)=>{
+   const tx=db.transaction(STORE,'readonly');
+   const request=tx.objectStore(STORE).get(id);
+   request.onsuccess=()=>resolve(request.result||null);
+   request.onerror=()=>reject(request.error);
+   tx.oncomplete=()=>db.close();
+   tx.onerror=()=>db.close();
+ });
+ if(!record)return null;
+ const guide=await decryptRecord(record);
+ if(!record.ciphertext) await storeGuide(guide);
+ return guide;
+}
   window.SunbeamStorage = Object.freeze({
     saveKey, baseProgress, loadProgress, persistProgress,
-    setGuideKey, getAllGuides, storeGuide, savedAuthKey, rememberAuthKey, forgetAuthKey
+    setGuideKey, getAllGuides, storeGuide, getGuide, listStoredIds, savedAuthKey, rememberAuthKey, forgetAuthKey
   });
 })();

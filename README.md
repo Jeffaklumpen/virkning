@@ -6,7 +6,10 @@ A small personal crochet companion built as a static installable iPad web app (P
 
 - `index.html` — app entrypoint and ordered scripts
 - `manifest.webmanifest`, `service-worker.js` — install metadata and offline cache
-- `js/app.js` — app orchestration and interactive crochet guide UI
+- `js/app.js` — login, state, navigation, and interactive crochet actions
+- `js/views.js` — library, guide and completion HTML templates
+- `js/guide-loader.js` — small public catalogue and on-demand encrypted-file loader
+- `data/pattern-catalog.json` — metadata and ordered assets for all bundled guides
 - `js/storage.js` — encrypted on-device patterns, remembered login and progress
 - `js/crypto.js` — password-derived keys and encrypted pattern decryption
 - `js/patterns.js` — shared pattern selectors and output escaping
@@ -39,7 +42,7 @@ These are device-local. Progress is preserved when pattern IDs stay the same. Cl
 
 ## Development
 
-Use HTTPS (or a secure local development context). Update `index.html` and the service worker cache list when changing scripts, and bump the cache name for offline deployments. Keep purchased pattern source/PDF content out of commits, pull requests, and public assets. The local encryption helper is `tools/encrypt-pattern.mjs` (Node 20+). Instructions for adding encrypted patterns: [docs/ADDING_PATTERNS.md](docs/ADDING_PATTERNS.md).
+Use HTTPS (or a secure local development context). Update `index.html` and the service worker shell when adding core app scripts or styles, and bump its cache version. **New guides only need their encrypted files and a catalogue entry**; the local encryption tool now updates the catalogue for you. Keep purchased pattern source/PDF content out of commits, pull requests, and public assets. The local encryption helper is `tools/encrypt-pattern.mjs` (Node 20+). Instructions for adding encrypted patterns: [docs/ADDING_PATTERNS.md](docs/ADDING_PATTERNS.md).
 
 ## Security and maintenance
 
@@ -54,3 +57,11 @@ The visible **Log out** button has been removed on request; remembered login and
 ## Time estimates
 
 Cards in Your Pattern Hive and each pattern header display an approximate range of **active crafting hours**. The ranges account for crocheting, stuffing, yarn changes, details and assembly for a hobby crocheter; they are not generated from a timer, are not precise, and vary with experience and yarn size. They are stored separately in `js/estimates.js` as public metadata and do not expose the underlying protected pattern instructions. Cute Loaf Cat uses distinct estimates for the solid and spotted variants. New or unknown patterns do not display a made-up time estimate until reviewed.
+
+## Fast startup and offline guides
+
+The home screen loads only the small public catalogue, app modules and design assets. Encrypted guide payloads (and their full-size photos) are **not** downloaded on app startup. Opening a guide retrieves its encrypted parts once, decrypts that guide only and saves it encrypted in IndexedDB. On the same iPad, it can subsequently open from local storage without another network request. The service worker also caches requested parts for offline access. A new guide requires one online opening before it is available offline.
+
+Catalogue cards show a generic preview until the guide has been opened in the current session; purchased images remain inside the protected payload. Progress percentages from earlier opens are remembered without scanning all saved ciphertext on every launch.
+
+Run `node --test tests/smoke.test.mjs` to check the public catalogue, module dependencies, encryption storage and navigation templates.
