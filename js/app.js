@@ -4,7 +4,7 @@
   const $=(s)=>document.querySelector(s);
   const el=$('#app');
   const modal=$('#modal-root');
-  let patterns=[], loadedPatterns=new Map(), activeId=null, activeStep=null, activeGroup=null, progress={}, authKey=null, patternKey=null, loadingToken=0, previewImages=new Map(), photoSweepId=0;
+  let patterns=[], loadedPatterns=new Map(), activeId=null, activeStep=null, activeGroup=null, progress={}, authKey=null, patternKey=null, loadingToken=0, previewImages=new Map(), photoSweepId=0, overviewOpen=false;
   const {esc, icon, picture, validPattern, stepsFor, groupSteps, stats} = window.SunbeamPatterns;
   const {baseProgress, loadProgress, persistProgress, setGuideKey,
     getGuide, listStoredIds, storeGuide, storePreview, getPreviews, savedAuthKey, rememberAuthKey, forgetAuthKey} = window.SunbeamStorage;
@@ -62,6 +62,7 @@
   }
 
   function renderLibrary(){
+  overviewOpen=false;
   if(!authKey)return renderLogin();
   loadingToken++;activeId=null;activeStep=null;
   const started=patterns.map(meta=>{
@@ -74,6 +75,7 @@
   window.scrollTo({top:0,behavior:'instant'});
 }
   function renderGuide(stepId){
+  overviewOpen=false;
   const p=getPattern();if(!p)return renderLibrary();
   const all=stepsFor(p,progress);if(!all.length)return renderLibrary();
   if(stepId && all.some(s=>s.id===stepId))activeStep=stepId;
@@ -87,6 +89,18 @@
   document.getElementById('chapter-select')?.addEventListener('change',e=>jumpGroup(e.target.value));
   window.scrollTo({top:0,behavior:'instant'});
 }
+
+  function renderOverview(){
+    const p=getPattern();
+    if(!p||!authKey)return renderLibrary();
+    overviewOpen=true;
+    el.innerHTML=window.SunbeamOverview.render(p,progress,activeStep);
+    window.scrollTo({top:0,behavior:'instant'});
+  }
+  function returnToGuide(){
+    if(!overviewOpen)return;
+    renderGuide(activeStep);
+  }
 
   function jumpGroup(id){const p=getPattern(),group=p?.groups.find(x=>x.id===id);if(!group)return;const step=groupSteps(p,group,progress)[0];if(step)renderGuide(step.id)}
   function jump(delta){const p=getPattern(),all=stepsFor(p,progress),i=all.findIndex(x=>x.id===activeStep);if(i<0)return; if(delta>0){progress.done[activeStep]=true;persist();}const next=all[Math.max(0,Math.min(all.length-1,i+delta))];if(delta>0&&i===all.length-1)return showFinished();renderGuide(next.id)}
@@ -192,10 +206,10 @@
   function showDictionary(){const p=getPattern();let dict=p?.dictionary||{sc:'Single crochet (US terms)',inc:'Increase (2 sc in one stitch)',dec:'Decrease (2 stitches joined into 1)',slst:'Slip stitch',ch:'Chain',FO:'Fasten off',BLO:'Back loops only',FLO:'Front loops only',bo:'Bobble stitch',hdc:'Half double crochet',dc:'Double crochet',htr:'Half treble crochet'};showModal(`<div class="dialog-head"><div><span class="kicker">little helper</span><h2>Stitch dictionary ✿</h2></div><button class="x-btn" data-action="close-modal" aria-label="Close">×</button></div><p>Quick reminders for the abbreviations in this pattern (US terminology).</p><div class="dictionary">${Object.entries(dict).map(([k,v])=>`<div class="dict-item"><b>${esc(k)}</b> ${esc(v)}</div>`).join('')}</div><button class="btn btn-primary" data-action="close-modal">Back to crocheting ♡</button>`)}
   function showZoom(key){const p=getPattern(),src=picture(p,key);if(!src)return;modal.innerHTML=`<div class="dialog-backdrop zoom-backdrop" data-action="close-modal"><button class="x-btn" style="position:absolute;right:20px;top:20px" data-action="close-modal" aria-label="Close">×</button><img class="dialog-img" src="${src}" alt="Enlarged crochet reference photograph"></div>`;document.body.style.overflow='hidden';bindModalControls()}
   function resetConfirm(){const p=getPattern();if(!p)return;showModal(`<div class="dialog-head"><div><span class="kicker">fresh beginning?</span><h2>Restart ${esc(p.title)}?</h2></div><button type="button" class="x-btn" data-action="close-modal" aria-label="Close restart dialog">×</button></div><p>All completed-step checkmarks for this pattern will be cleared. This cannot be undone.</p><button type="button" class="btn btn-primary" data-action="confirm-reset">Yes, start again</button><button type="button" class="btn btn-secondary" data-action="close-modal">Keep my progress</button>`)}
-  async function handleAction(button){const action=button.dataset.action;switch(action){case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id);break;case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
+  async function handleAction(button){const action=button.dataset.action;switch(action){case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id);break;case 'overview':renderOverview();break;case 'back-to-guide':returnToGuide();break;case 'overview-section':{if(!overviewOpen)break;const section=document.getElementById('overview-group-'+button.dataset.id);section?.scrollIntoView({behavior:'smooth',block:'start'});break}case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
   document.addEventListener('click',e=>{const t=e.target.closest('[data-action]');if(!t)return; if(t.classList.contains('dialog-backdrop')&&e.target!==t)return; e.preventDefault();handleAction(t)});
   document.addEventListener('change',e=>{const m=e.target.closest('[data-material]');if(m){progress.materials[m.dataset.material]=m.checked;persist();}});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();return}if(!activeId||modal.innerHTML||['TEXTAREA','INPUT','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'){e.preventDefault();jump(1)}else if(e.key==='ArrowLeft'){e.preventDefault();jump(-1)}else if(e.key==='Enter' && document.activeElement?.dataset.action==='zoom'){showZoom(document.activeElement.dataset.key)}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modal.innerHTML){closeModal();return}if(overviewOpen){returnToGuide();return}closeModal();return}if(overviewOpen||!activeId||modal.innerHTML||['TEXTAREA','INPUT','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'){e.preventDefault();jump(1)}else if(e.key==='ArrowLeft'){e.preventDefault();jump(-1)}else if(e.key==='Enter' && document.activeElement?.dataset.action==='zoom'){showZoom(document.activeElement.dataset.key)}});
   $('#home-btn').addEventListener('click',()=>authKey?renderLibrary():renderLogin());
   async function init(){
     if(!window.isSecureContext || !window.crypto?.subtle){
