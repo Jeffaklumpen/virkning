@@ -1,0 +1,32 @@
+name: Inspect legacy Donut guide safely
+on:
+  push:
+    paths:
+      - '.github/workflows/donut-inspect.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Inspect guide metadata only
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          const content=execFileSync('git',['show','6b43e159d36e799db913c80b6014ed1687ff640b:private-guide.js'],{encoding:'utf8',maxBuffer:20*1024*1024});
+          const m=content.match(/^\s*window\.KIMSI_PRELOADED_GUIDES\s*=\s*([\s\S]*?)\s*;\s*$/);
+          if(!m)throw Error('Source assignment format not recognized');
+          const list=JSON.parse(m[1]);
+          const guides=Array.isArray(list)?list:[list];
+          for(const g of guides)console.log(JSON.stringify({
+            id:g.id,title:g.title,designer:g.designer,
+            steps:g.groups?.reduce((n,x)=>n+(x.steps?.length||0),0),
+            groups:g.groups?.length,images:Object.keys(g.images||{}).length,
+            photos:Object.values(g.images||{}).filter(v=>/^data:image\/(jpeg|png|webp);base64,/.test(v)).length,
+            groupTitles:g.groups?.map(x=>x.title),
+          }));
+          NODE
