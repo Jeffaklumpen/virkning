@@ -4,7 +4,7 @@
   const {esc,icon,picture,safeImage,groupSteps} = window.SunbeamPatterns;
   const {estimateTime} = window.SunbeamEstimates;
   function dataThumb(p) {
-  const src=picture(p,p.cover||'cover') || safeImage(p.coverAsset||'');
+  const src=picture(p,p.cover||'cover') || safeImage(p.preview||'') || safeImage(p.coverAsset||'');
   return src?`<img src="${src}" alt="${esc(p.title)}" loading="lazy">`:`<span class="pattern-thumb-placeholder" aria-label="Pattern preview not loaded">🧶</span>`;
 }
   function login(message=''){return `<section class="sunbeam-login" aria-label="Private login">
