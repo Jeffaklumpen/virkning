@@ -27,3 +27,19 @@ SUNBEAM_PASSWORD='your-private-password' node tools/encrypt-pattern.mjs /path/to
 Use `SUNBEAM_REVISION=3` when updating revision 2. The script derives the same browser login key from the public auth configuration, generates a fresh random IV, uses authenticated AES-256-GCM and writes numbered encrypted parts and a loader. It refuses to overwrite existing output parts; remove/backup the previous encrypted slug directory before an intentional update. The script also writes or updates the matching entry in `data/pattern-catalog.json`; keep that file in the same commit as the ciphertext. The runtime loads `part-XX.js` in order, followed by `loader.js`, only when opening the guide. No HTML/service-worker edits are needed. Change the service-worker cache version only when you change the app shell.
 
 Do not hardcode the password in this script or upload the original file, shell history, or environment configuration. Be careful with shell commands containing secrets in shared systems.
+
+## Add or replace a lightweight encrypted cover
+
+After producing a small 440 × 440 WebP photograph from the original guide **outside
+the public repository**, run:
+
+```sh
+SUNBEAM_PASSWORD='your-private-password' node tools/encrypt-cover.mjs guide-id /absolute/path/to/cover.webp
+```
+
+The cover utility verifies the password against the wrapped login key, encrypts
+the supplied image with AES-256-GCM and updates
+`data/encrypted/cover-previews.json`. Commit only the encrypted JSON. Never
+commit plaintext cover images or purchased PDFs. Each cover is keyed by stable
+guide ID and independent of the full guide; no new script tags or asset lists
+are necessary. Bump the service-worker cache version when changing the bundle.

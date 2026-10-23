@@ -39,7 +39,7 @@
   previewImages=new Map(Object.entries(previews));
   patternKey=key;authKey=loginKey;
   renderLibrary();
-  void populateRealCoverPhotos();
+  void populateEncryptedCoverPhotos();
 }
   async function signInWithPassword(){
     const field=el.querySelector('#sunbeam-password');
@@ -148,20 +148,41 @@
     return thumbnail;
   }
 
-  async function populateRealCoverPhotos(){
+  // Small, separately encrypted original covers replace the old full-guide
+  // background downloads. Failure only leaves a placeholder; opening a guide
+  // always remains independent of the cover bundle.
+  async function populateEncryptedCoverPhotos(){
     const run=++photoSweepId;
-    for(const entry of patterns){
+    const missing=patterns.filter(entry=>entry.assets&&!previewImages.has(entry.id));
+    if(!missing.length)return;
+    let bundle;
+    try{
+      const response=await fetch('./data/encrypted/cover-previews.json');
+      if(!response.ok)throw Error('Cover previews unavailable');
+      bundle=await response.json();
+      if(bundle?.version!==1||!bundle.covers||typeof bundle.covers!=='object')return;
+    }catch{return}
+    for(const entry of missing){
       if(run!==photoSweepId||!authKey)return;
-      if(previewImages.has(entry.id))continue;
-      try {
-        // The initial grid does not fetch every guide synchronously. Original
-        // photographs are added automatically, without having to open each card.
-        const guide=loadedPatterns.get(entry.id)||await readAvailableGuide(entry);
-        if(run!==photoSweepId)return;
-        await saveRealPhotoPreview(entry.id,guide);
-      }catch(error){
-        // Unavailable covers must never block opening other guides.
-      }
+      const encrypted=bundle.covers[entry.id];
+      if(!encrypted||previewImages.has(entry.id))continue;
+      try{
+        const thumbnail=await window.SunbeamCrypto.decryptCover(encrypted,entry.id,authKey);
+        if(run!==photoSweepId||!authKey)return;
+        previewImages.set(entry.id,thumbnail);
+        const card=[...document.querySelectorAll('.pattern-card')].find(node=>node.dataset.id===entry.id);
+        const pending=card?.querySelector('.real-photo-pending');
+        if(pending){
+          const img=document.createElement('img');
+          img.alt=entry.title||'Original crochet pattern photograph';
+          img.loading='lazy';
+          img.src=thumbnail;
+          pending.replaceWith(img);
+        }
+        // The full-size guide is NOT downloaded. Preserve the thumbnail
+        // encrypted at rest so a return visit works immediately and offline.
+        await storePreview(entry.id,thumbnail).catch(()=>{});
+      }catch{/* A broken cover must never stop the rest of the library. */}
     }
   }
 

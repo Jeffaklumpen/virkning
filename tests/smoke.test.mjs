@@ -428,3 +428,26 @@ test('long guides can be scanned in a single overview and wired from guide mode'
   assert.match(source('css/overview.css'),/@media\(max-width:700px\)/);
   assert.match(source('css/overview.css'),/position:sticky/);
 });
+
+test('the library uses small encrypted covers instead of bulk background guide downloads', () => {
+  const app=source('js/app.js');
+  const crypto=source('js/crypto.js');
+  const sw=source('service-worker.js');
+  const covers=JSON.parse(source('data/encrypted/cover-previews.json'));
+  const catalog=JSON.parse(source('data/pattern-catalog.json'));
+  assert.equal(covers.version,1);
+  assert.equal(Object.keys(covers.covers).length,catalog.length);
+  assert.ok(Buffer.byteLength(JSON.stringify(covers))<400000,'covers must stay lightweight');
+  for(const guide of catalog){
+    const cover=covers.covers[guide.id];
+    assert.ok(cover && typeof cover.iv==='string' && typeof cover.ciphertext==='string',guide.id);
+    assert.ok(cover.ciphertext.length>100);
+    assert.doesNotMatch(JSON.stringify(cover),/data:image|crochet pattern|stitch instructions/i);
+  }
+  assert.match(app,/void populateEncryptedCoverPhotos\(\)/);
+  assert.doesNotMatch(app,/populateRealCoverPhotos/);
+  assert.match(app,/SunbeamCrypto\.decryptCover/);
+  assert.match(crypto,/sunbeam-cover:/);
+  assert.match(sw,/data\/encrypted\/cover-previews\.json/);
+  assert.doesNotMatch(sw,/part-01\.js/);
+});

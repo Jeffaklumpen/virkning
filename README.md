@@ -10,7 +10,7 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `js/views.js` — library, guide and completion HTML templates
 - `js/overview.js` and `css/overview.css` — single-page, scrollable guide overview with sections, step navigation and original images
 - `js/guide-loader.js` — small public catalogue and on-demand encrypted-file loader
-- `js/previews.js` — creates compact on-device cover previews after a pattern opens
+- `js/previews.js` — creates compact on-device cover previews after a pattern opens\n- `data/encrypted/cover-previews.json` — five small AES-GCM encrypted original-photo covers, fetched independently of the guides
 - `data/pattern-catalog.json` — metadata and ordered assets for all bundled guides
 - `js/storage.js` — encrypted on-device patterns, remembered login and progress
 - `js/crypto.js` — password-derived keys and encrypted pattern decryption
@@ -42,7 +42,7 @@ These are device-local. Progress is preserved when pattern IDs stay the same. Cl
 
 ## Development
 
-Use HTTPS (or a secure local development context). Update `index.html` and the service worker shell when adding core app scripts or styles, and bump its cache version. **New guides only need their encrypted files and a catalogue entry**; the local encryption tool now updates the catalogue for you. Keep purchased pattern source/PDF content out of commits, pull requests, and public assets. The local encryption helper is `tools/encrypt-pattern.mjs` (Node 20+). Instructions for adding encrypted patterns: [docs/ADDING_PATTERNS.md](docs/ADDING_PATTERNS.md).
+Use HTTPS (or a secure local development context). Update `index.html` and the service worker shell when adding core app scripts or styles, and bump its cache version. **New guides only need their encrypted files and a catalogue entry**; the local encryption tool now updates the catalogue for you. Keep purchased pattern source/PDF content out of commits, pull requests, and public assets. The local encryption helpers are `tools/encrypt-pattern.mjs` and `tools/encrypt-cover.mjs` (Node 20+). Instructions for adding encrypted patterns: [docs/ADDING_PATTERNS.md](docs/ADDING_PATTERNS.md).
 
 ## Security and maintenance
 
@@ -60,15 +60,15 @@ Cards in Your Pattern Hive and each pattern header display an approximate range 
 
 ## Fast startup and offline guides
 
-The home screen loads only the small public catalogue, app modules and design assets. Encrypted guide payloads (and their full-size photos) are **not** downloaded on app startup. Opening a guide retrieves its encrypted parts once, decrypts that guide only and saves it encrypted in IndexedDB. On the same iPad, it can subsequently open from local storage without another network request. The service worker also caches requested parts for offline access. A new guide requires one online opening before it is available offline.
+The home screen loads only the small public catalogue, app modules, design assets and a small encrypted cover bundle (approximately 240 KB for all five photos). Encrypted guide payloads (and their full-size photos) are **not** downloaded on app startup. Opening a guide retrieves its encrypted parts once, decrypts that guide only and saves it encrypted in IndexedDB. On the same iPad, it can subsequently open from local storage without another network request. The service worker also caches requested parts for offline access. A new guide requires one online opening before it is available offline.
 
-Catalogue cards display encrypted on-device cover previews, automatically generated from the original guides when needed. Purchased images remain inside the protected payload; previews are encrypted locally. Progress percentages from earlier opens are remembered without scanning all saved ciphertext on every launch.
+Catalogue cards display real, original-photo cover previews, now shipped as a small separately encrypted bundle. The app decrypts the thumbnails after sign-in, stores them encrypted in IndexedDB and never downloads entire unopened guides just to draw grid photos. Opening a guide still generates and locally stores a preview as a fallback. Purchased images remain inside the protected payload; previews are encrypted locally. Progress percentages from earlier opens are remembered without scanning all saved ciphertext on every launch.
 
 Run `node --test tests/smoke.test.mjs` to check the public catalogue, module dependencies, encryption storage and navigation templates.
 
 ## Original crochet photographs
 
-The grid displays original photographs rather than illustrated substitutes. After unlocking, it uses encrypted previews from device storage or automatically fetches encrypted guides to create small on-device thumbnails. The first visit can briefly show “Loading photo…” while images are prepared.
+The grid displays original photographs rather than illustrated substitutes. After unlocking, it uses encrypted previews from device storage or downloads the lightweight encrypted cover bundle. The first visit can briefly show “Loading photo…” while those photos are decrypted. Full guides are only downloaded when opened.
 
 Removing a guide from the visible library does not delete saved progress or encrypted local records. Only the five bundled patterns appear in the app; older device data is preserved for safety.
 

@@ -37,7 +37,24 @@
         ).text();
     return JSON.parse(json);
   }
+  async function decryptCover(item, id, loginKey) {
+    if (!item || typeof item.iv !== 'string' || typeof item.ciphertext !== 'string' ||
+        typeof id !== 'string' || !/^[a-z0-9-]{2,80}$/.test(id)) {
+      throw Error('Invalid encrypted cover');
+    }
+    const plaintext = await crypto.subtle.decrypt({
+      name: 'AES-GCM', iv: base64Bytes(item.iv),
+      additionalData: new TextEncoder().encode('sunbeam-cover:' + id + ':v1')
+    }, loginKey, base64Bytes(item.ciphertext));
+    const cover = new TextDecoder().decode(plaintext);
+    const prefixes = ['data:image/webp;base64,', 'data:image/png;base64,', 'data:image/jpeg;base64,'];
+    const encoded = cover.substring(cover.indexOf(',') + 1);
+    if (!prefixes.some(prefix => cover.startsWith(prefix)) || !/^[A-Za-z0-9+/=]+$/.test(encoded)) {
+      throw Error('Invalid cover image');
+    }
+    return cover;
+  }
   window.SunbeamCrypto = Object.freeze({
-    derivePasswordKey, unwrapPrivatePatternKey, decryptGuide
+    derivePasswordKey, unwrapPrivatePatternKey, decryptGuide, decryptCover
   });
 })();

@@ -7,7 +7,7 @@ The app is a classic static site: each `<script defer>` publishes a single small
 - `js/patterns.js`: pure pattern validation, steps, completion summaries and safe HTML/image helpers.
 - `js/app.js`: login workflow, state management, navigation, user actions, and on-demand guide hydration.
 - `js/views.js`: presentation-only HTML for login, library, guide steps, and completed projects.
-- `js/previews.js`: generates a small cover preview on first open, encrypted and stored separately by `js/storage.js`.
+- `js/previews.js`: generates a small cover preview on first open, encrypted and stored separately by `js/storage.js`. A lightweight pre-encrypted cover bundle supplies all five original images without opening guides.\n- `data/encrypted/cover-previews.json`: standalone AES-GCM encrypted image payloads keyed by guide ID, authenticated with ID-specific associated data and decrypted only after sign-in.
 - `js/guide-loader.js`: reads the public pattern catalogue, downloads encrypted script parts in execution order only when a guide needs loading.
 - `data/pattern-catalog.json`: public ID/title/designer/revision and ordered encrypted asset paths. Never includes guide plaintext.
 - `js/pwa.js`: registers the service worker; no inline JavaScript is needed.
@@ -37,6 +37,6 @@ Public, editorial time ranges are defined in `js/estimates.js` and loaded before
 
 ## Performance boundary
 
-The initial bundle no longer downloads or decrypts every copyrighted pattern. After successful unlock, catalogue metadata and stored IndexedDB keys populate the grid. `getGuide(id)` reads/decrypts one saved record as needed; `SunbeamGuides.load(entry)` loads only the missing or outdated encrypted source in order. Existing local copies are used when offline, and progress keys do not change. Keep the loader's script serialization, since the legacy tooth payload replaces a shared global registry. No framework or build process is required.
+The initial bundle no longer downloads or decrypts every copyrighted pattern. After successful unlock, catalogue metadata and stored IndexedDB previews populate the grid immediately; the separate small encrypted cover bundle fills any missing previews without fetching unopened guides. `getGuide(id)` reads/decrypts one saved record as needed; `SunbeamGuides.load(entry)` loads only the missing or outdated encrypted source in order. Existing local copies are used when offline, and progress keys do not change. Keep the loader's script serialization, since the legacy tooth payload replaces a shared global registry. No framework or build process is required.
 
 For new guides, run the local encryption utility. It writes the ciphertext and adds its assets to the catalogue automatically. No per-pattern changes to `index.html` or the service worker are needed.
