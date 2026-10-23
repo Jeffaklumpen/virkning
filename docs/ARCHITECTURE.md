@@ -7,6 +7,7 @@ The app is a classic static site: each `<script defer>` publishes a single small
 - `js/patterns.js`: pure pattern validation, steps, completion summaries and safe HTML/image helpers.
 - `js/app.js`: login workflow, state management, navigation, user actions, and on-demand guide hydration.
 - `js/views.js`: presentation-only HTML for login, library, guide steps, and completed projects.
+- `js/previews.js`: generates a small cover preview on first open, encrypted and stored separately by `js/storage.js`.
 - `js/guide-loader.js`: reads the public pattern catalogue, downloads encrypted script parts in execution order only when a guide needs loading.
 - `data/pattern-catalog.json`: public ID/title/designer/revision and ordered encrypted asset paths. Never includes guide plaintext.
 - `js/pwa.js`: registers the service worker; no inline JavaScript is needed.
@@ -20,7 +21,7 @@ Do not change existing guide IDs. Completion entries are stored in localStorage 
 
 ## Publishing checklist
 
-1. Inspect `index.html` script order: auth-config, storage, crypto, patterns, estimates, guide-loader, views, app, PWA. Encrypted guide chunks must not be on the page.
+1. Inspect `index.html` script order: auth-config, storage, crypto, patterns, estimates, guide-loader, views, previews, app, PWA. Encrypted guide chunks must not be on the page.
 2. The worker precaches **only the small app shell**. Encrypted chunks are runtime-cached on first opening. Bump `CACHE` for shell updates.
 3. Run `node --check` on JS files and check CSS brackets/syntax.
 4. Test first login, remembered login, logout, image zoom and progress persistence in Safari.
