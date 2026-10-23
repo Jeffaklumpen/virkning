@@ -10,7 +10,7 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `js/views.js` — library, guide and completion HTML templates
 - `js/overview.js` and `css/overview.css` — single-page, scrollable guide overview with sections, step navigation and original images
 - `js/guide-loader.js` — small public catalogue and on-demand encrypted-file loader
-- `js/previews.js` — creates compact on-device cover previews after a pattern opens\n- `data/encrypted/cover-previews.json` — ten small AES-GCM encrypted original-photo covers, fetched independently of the guides
+- `js/previews.js` — creates compact on-device cover previews after a pattern opens\n- `data/encrypted/cover-previews.json` — eleven small AES-GCM encrypted original-photo covers, fetched independently of the guides
 - `data/pattern-catalog.json` — metadata and ordered assets for all bundled guides
 - `js/storage.js` — encrypted on-device patterns, remembered login and progress
 - `js/crypto.js` — password-derived keys and encrypted pattern decryption
@@ -61,7 +61,7 @@ Cards in Your Pattern Hive and each pattern header display an approximate range 
 
 ## Fast startup and offline guides
 
-The home screen loads only the small public catalogue, app modules, design assets and a small encrypted cover bundle (approximately 415 KB for ten encrypted photo covers). Encrypted guide payloads (and their full-size photos) are **not** downloaded on app startup. Opening a guide retrieves its encrypted parts once, decrypts that guide only and saves it encrypted in IndexedDB. On the same iPad, it can subsequently open from local storage without another network request. The service worker also caches requested parts for offline access. A new guide requires one online opening before it is available offline.
+The home screen loads only the small public catalogue, app modules, design assets and a small encrypted cover bundle (a lightweight separately encrypted cover bundle). Encrypted guide payloads (and their full-size photos) are **not** downloaded on app startup. Opening a guide retrieves its encrypted parts once, decrypts that guide only and saves it encrypted in IndexedDB. On the same iPad, it can subsequently open from local storage without another network request. The service worker also caches requested parts for offline access. A new guide requires one online opening before it is available offline.
 
 Catalogue cards display real, original-photo cover previews, now shipped as a small separately encrypted bundle. The app decrypts the thumbnails after sign-in, stores them encrypted in IndexedDB and never downloads entire unopened guides just to draw grid photos. Opening a guide still generates and locally stores a preview as a fallback. Purchased images remain inside the protected payload; previews are encrypted locally. Progress percentages from earlier opens are remembered without scanning all saved ciphertext on every launch.
 
@@ -71,7 +71,7 @@ Run `node --test tests/smoke.test.mjs` to check the public catalogue, module dep
 
 The grid displays original photographs rather than illustrated substitutes. After unlocking, it uses encrypted previews from device storage or downloads the lightweight encrypted cover bundle. The first visit can briefly show “Loading photo…” while those photos are decrypted. Full guides are only downloaded when opened.
 
-Removing a guide from the visible library does not delete saved progress or encrypted local records. Ten bundled patterns appear in the app; older device data is preserved for safety.
+Removing a guide from the visible library does not delete saved progress or encrypted local records. Eleven bundled patterns appear in the app; older device data is preserved for safety.
 
 ## Full pattern overview
 
@@ -94,3 +94,7 @@ Protected 16-page Pooh Snuggler pattern with 33 navigable steps in ten sections,
 ## Luna the Druid (mrs.geegee.s Handmade)
 
 AES-GCM/gzip protected guide with 44 navigable steps in 12 sections, 22 protected original PDF-page references and a separately encrypted cover. Editorial active-crafting estimate: 18–30 hours. Do not commit the original PDF or plaintext source; respect the designer's restrictions on digital redistribution.
+
+## Baby Night Dragon Sploot (Snugglebeans Crochet)
+
+Shannon Munro's 14-page Sploot Series guide is packaged as an AES-GCM/gzip protected, lazy-loaded pattern with 39 navigable steps across 11 sections. It includes all 14 original page references plus protected photographs, and selectable Night Dragon / Light Dragon instructions for horns, head and tail fins. Page references and cover photography are encrypted; the original PDF and plaintext are never committed. Editorial active-crafting estimate: 7–12 hours. Respect the designer's restrictions on digital redistribution.
