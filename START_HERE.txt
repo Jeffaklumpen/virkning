@@ -1,0 +1,11 @@
+Kimsi's Cozy Stitches — PRIVATE PERSONAL VERSION
+
+Open index.html in a browser to see the Donut Kitty guide. The pattern is already pre-installed on first load. If your browser restricts local files, serve this folder using a local web server (e.g. python -m http.server 8000) and visit http://localhost:8000.
+
+The original PDF's pictures have been embedded in private-guide.js. Do not upload this file to a public repo or public website. The design-only app files are safe to put on GitHub.
+
+Guide progress saves automatically in THIS browser (localStorage); imported guides are stored in IndexedDB. Your progress will not sync across devices. Use Settings > Download complete backup regularly.
+
+To host for your wife's phone while keeping purchased pattern private: secure the entire site behind authentication (e.g. Cloudflare Access). A private GitHub repository does NOT make Github Pages content private.
+
+PUBLIC REPO VERSION: app files without the private-guide.js. On first visit, use Add a pattern to import donut-kitty.kimsi.json on each device you want to use. No PDF or guide data is ever uploaded by the website itself.
