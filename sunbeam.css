@@ -1,0 +1,165 @@
+/* Sunbeam Art — warm honey, buttercream, lavender and mint. */
+/* Keeps the original app structure and all local progress data unchanged. */
+:root{
+  --bg:#FFFAF2;--paper:#FFFEFA;--ink:#45372F;--sub:#89786B;--muted:#BAAC99;
+  --pink:#E9B44B;--pinkdeep:#AB7427;--pinklite:#FFF4D8;
+  --lav:#F1EAFB;--lavdeep:#A291C0;--peach:#FFE8C3;
+  --mint:#E5F2EA;--mintdeep:#548F70;--line:#F0E4D2;
+  --shadow:0 18px 52px rgba(116,83,41,.07);
+}
+html{color-scheme:light}
+body{
+  background:
+    radial-gradient(ellipse 550px 450px at 3% 20%,rgba(255,224,156,.23),transparent 80%),
+    radial-gradient(ellipse 540px 480px at 98% 50%,rgba(235,223,254,.27),transparent 80%),
+    var(--bg);
+}
+button:focus-visible,a:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #BA852F;outline-offset:4px}
+a{color:#9D671D}
+.ambient-one{background:#FFE5A5;opacity:.27}
+.ambient-two{background:#DDD4F6;opacity:.35}
+.topbar{max-width:1190px;padding-top:26px;padding-bottom:21px}
+.brand{gap:13px;align-items:center}
+.brand-mark{
+  width:60px;height:60px;border-radius:22px;
+  background:#FFF0BF;border:1px solid #F7E2AA;
+  box-shadow:0 8px 22px rgba(198,144,48,.12);display:grid;place-items:center;
+}
+.brand-bee{display:block;width:58px;height:58px;object-fit:contain;transform:rotate(-8deg)}
+.brand-name{font-size:28px;font-weight:900;letter-spacing:-1.75px;line-height:24px;color:#443328}
+.brand-dot{color:#C48B35;letter-spacing:-1px}
+.brand small{font-size:9px;letter-spacing:2.15px;color:#A38B72;margin-top:9px}
+.saved-pill{color:#8D816F;background:#FFFDF7;border:1px solid #F1E5D1;border-radius:50px;padding:9px 14px;font-size:11px}
+.save-dot{background:#79B695;box-shadow:0 0 0 3px #E6F3E9}
+.app-shell{margin-top:23px}
+.hero{
+  background:linear-gradient(115deg,#FFFEFB 5%,#FFF6DF 72%,#FFEEC9 120%);
+  border:1px solid #F7E5C6;border-radius:36px;
+  box-shadow:0 20px 65px rgba(159,117,43,.075);padding:56px 58px;
+}
+.hero::before{content:'✳';font-size:102px;color:#F3DA9B;right:28px;top:-49px;opacity:.58}
+.hero::after{content:'✦';font-size:52px;color:#E7D8EC;left:48%;bottom:4px;opacity:.6}
+.kicker{color:#A67934;letter-spacing:2px}
+.kicker::before{content:'✹';color:#E6A938;font-size:18px}
+.hero h1{color:#45362E;line-height:1.1;letter-spacing:-2.8px;max-width:700px}
+.hero h1 em{color:#BA812C}
+.hero h1 .hero-sun{font-size:.48em;display:inline-block;vertical-align:17%;filter:drop-shadow(0 3px 4px #e9b44a3a)}
+.hero .lead{color:#897766;max-width:550px;line-height:1.75}
+.hero-art{min-height:300px}
+.hero-art .illustration{
+  width:275px;height:275px;transform:rotate(0deg);
+  border-radius:47% 53% 59% 41%/51% 45% 55% 49%;
+  background:radial-gradient(circle at 42% 36%,#FFFDF4 5%,#FFE6A0 75%,#F8D67A 100%);
+  box-shadow:0 25px 50px rgba(215,158,69,.19),inset 0 0 0 2px rgba(255,255,255,.48);
+  animation:sunbeam-float 5.5s ease-in-out infinite;
+}
+.hero-art .illustration::after{content:'✦';color:#EFB856;top:-18px;right:8px}
+.hero-bee{width:270px;height:270px;display:block;object-fit:contain;filter:drop-shadow(0 11px 8px rgba(156,101,41,.14));transform:rotate(-5deg)}
+.hero-art .floating-star{color:#E6AC3C;font-size:31px;top:7px;left:15px}
+.hero-art .floating-heart{color:#C3A9D6;font-size:38px;bottom:13px;right:3px}
+@keyframes sunbeam-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-9px) rotate(2deg)}}
+.section-heading{margin-top:54px}
+.section-heading h2{color:#48362E;font-size:29px;letter-spacing:-1.2px}
+.section-heading p{color:#938173}
+.sunbeam-section-flower{color:#D8A348;margin-left:5px;font-size:.84em}
+.count-pill{background:#F8EBCF;color:#906724}
+.btn{border-radius:15px;min-height:46px}
+.btn-primary{
+  background:#F2C15B;color:#463524;
+  box-shadow:0 7px 18px rgba(210,158,61,.20);border:1px solid #EAB655;
+}
+.btn-primary:hover:not(:disabled){background:#F7CB72}
+.btn-secondary{background:#FFFEFC;color:#775E45;border:1px solid #EADBC4}
+.btn-soft{background:#FFF3CF;color:#986C26}
+.btn-mint{background:#378961;color:#fff}
+.btn-mint:hover:not(:disabled){background:#287750}
+.pattern-card{
+  border:1px solid #F0E3D0;border-radius:26px;
+  box-shadow:0 9px 30px rgba(132,96,40,.055);
+}
+.pattern-card:hover{box-shadow:0 17px 35px rgba(155,108,40,.13)}
+.pattern-thumb{background:radial-gradient(circle at 72% 23%,#FFFDF5,#FCE9BB 72%,#F2E7CC)}
+.pattern-body h3{color:#4C3A30}
+.badge{background:#FFF0C8;color:#996923}
+.badge-lav{background:#EEE9F8;color:#766294}
+.micro{color:#938171}
+.pattern-foot{border-top:1px solid #F1E8D7}
+.progress-track{background:#F4E7C9}
+.progress-fill{background:linear-gradient(90deg,#F1C76B,#E7A843)}
+.guide-hero{
+  background:linear-gradient(106deg,#FFFEFA,#FFF9EB);
+  border:1px solid #F0E1C8;border-radius:27px;
+  box-shadow:0 10px 35px rgba(140,100,45,.055);
+}
+.guide-cover{background:#FFF0C9}
+.back-link{color:#9D763C}
+.sidebar{border-color:#F0E5D1;background:#FFFEFB;box-shadow:0 8px 30px rgba(135,100,53,.055)}
+.sidebar-header strong{color:#6A4F32}
+.sidebar-group button{color:#8D7A65}
+.sidebar-group button:hover{background:#FFF8E8}
+.sidebar-group button.active{background:#FFF0CD;color:#98661D}
+.sidebar-group button.active .num{background:#E9B551;color:#473728}
+.sidebar-group .num{background:#F6EFE0}
+.side-footer{border-color:#F0E6D5}
+.side-footer button{color:#9B783F}
+.panel{border-color:#F0E4D1;background:#FFFEFD;box-shadow:0 13px 39px rgba(110,82,46,.055)}
+.section-label{color:#A27632}
+.step-title{color:#44352E}
+.step-instruction{color:#55473A}
+.stitch-raw{background:#F4EFFA;color:#81649F}
+.stitch-count{background:#E9F6EE;color:#377F5A}
+.image-caption{color:#9C8975}
+.tip-box{background:#FFF8E9;border-color:#F3E1BD;color:#80663E}
+.tip-box.lav{background:#F6F0FC;border-color:#EAE0F7;color:#7B6B98}
+.round-marker{border-color:#EDDFC5;color:#917B62}
+.round-marker.active{background:#E9B85C;border-color:#DBA948;color:#3B2F23}
+.round-marker.done{background:#328461;border-color:#328461;color:#fff}
+.round-marker.done.active{background:#226E4C;border:2px solid #fff;outline:3px solid #226E4C}
+.step-completion.in-progress{background:#FFF9ED;border-color:#F5E9CF;color:#987340}
+.step-completion.in-progress .step-completion-icon{background:#F8EBC8;color:#A17930}
+.step-panel-complete{border-color:#73B593}
+.choice{border-color:#EDE0C9}
+.choice.selected{border-color:#E6B450;background:#FFFBEC}
+.choice.selected .choice-indicator{background:#DEAF4E;border-color:#DEAF4E}
+.mat-item{border-color:#F0E4D3;background:#FFFCF7}
+.mat-check{accent-color:#DDA948}
+.dictionary .dict-item{background:#FFF9EA;color:#7F6A52}
+.dict-item b{color:#A87932}
+.dialog{background:#FFFEFA}
+.x-btn{background:#FFF2D7;color:#8E6C35}
+.toast{background:#44362F;color:#FFF7EB}
+.site-footer{color:#A18A70;margin-top:70px}
+.site-footer span{color:#DFAA3F}
+.footer-bee{width:31px;height:31px;vertical-align:middle;margin:0 5px}
+.pattern-complete-badge{background:#287E56}
+.library-empty{border-color:#EEDDB8;background:#FFFBF1}
+.library-empty .flower{color:#DDB55A}
+.chapter-nav select{background:#FFFDF8;border-color:#EEDFC5;color:#85622A}
+@media(max-width:900px){
+  .hero{padding:45px 39px}
+  .hero-art .illustration{width:224px;height:224px}
+  .hero-bee{width:220px;height:220px}
+}
+@media(max-width:700px){
+  .topbar{padding:16px 17px}
+  .brand-mark{height:48px;width:48px;border-radius:16px}
+  .brand-bee{height:48px;width:48px}
+  .brand-name{font-size:23px;line-height:21px}
+  .brand small{font-size:8px;letter-spacing:1.45px;margin-top:5px}
+  .topbar-right{gap:5px}
+  .saved-pill{display:flex;padding:8px 10px;font-size:0;gap:0}
+  .save-dot{width:9px;height:9px}
+  .hero{padding:34px 26px 21px;border-radius:28px;gap:9px}
+  .hero h1{font-size:41px;letter-spacing:-2px}
+  .hero .lead{font-size:15px}
+  .hero-art{min-height:197px}
+  .hero-art .illustration{width:183px;height:183px}
+  .hero-bee{width:183px;height:183px}
+  .hero-art .floating-star{left:42px;top:0}
+  .hero-art .floating-heart{right:30px;bottom:0}
+  .section-heading{margin-top:35px}
+  .guide-hero{border-radius:21px}
+  .panel{border-radius:22px}
+  .step-actions{background:#FFFDFAF2;border-color:#EEE2D2}
+}
+@media(prefers-reduced-motion:reduce){.hero-art .illustration{animation:none}.btn,.pattern-card{transition:none}}
