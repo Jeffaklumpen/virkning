@@ -130,7 +130,7 @@ test('fast shell, on-demand encrypted assets and catalogue match', () => {
   const html=source('index.html');
   const sw=source('service-worker.js');
   const catalog=JSON.parse(source('data/pattern-catalog.json'));
-  assert.equal(catalog.length,11);
+  assert.equal(catalog.length,12);
   assert.match(html,/Content-Security-Policy/);
   assert.doesNotMatch(html,/<script\s*>/i);
   assert.match(source('manifest.webmanifest'),/"display": "standalone"/);
@@ -247,7 +247,7 @@ test('login can display an unloaded pattern catalogue without fetching encrypted
   const document={createElement(){inserted++;return {};},head:{appendChild(){}}};
   runInNewContext(source('js/guide-loader.js'),{window,fetch,document,Map,Set,Promise});
   const entries=await window.SunbeamGuides.catalog();
-  assert.equal(entries.length,11);
+  assert.equal(entries.length,12);
   assert.equal(fetched,1);
   assert.equal(inserted,0);
 });
@@ -277,7 +277,7 @@ test('retired guide is absent from the current app, catalogue, assets and PWA ca
   const app=source('js/app.js');
   const worker=source('service-worker.js');
   const catalogue=JSON.parse(source('data/pattern-catalog.json'));
-  assert.equal(catalogue.length,11);
+  assert.equal(catalogue.length,12);
   assert.equal(catalogue.some(entry=>entry.id==='donut-kitty'),false);
   assert.equal(source('js/estimates.js').includes("'donut-kitty':"),false);
   assert.equal(worker.includes('donut-cover.svg'),false);
@@ -579,7 +579,7 @@ test('Easter Bunny Bundle adds a fully encrypted, 43-page three-project guide', 
   const entries=JSON.parse(source('data/pattern-catalog.json'));
   const easter=entries.find(entry=>entry.id==='krochet-by-kris-easter-bunny-bundle');
   assert.ok(easter && easter.revision===1);
-  assert.equal(entries.length,11);
+  assert.equal(entries.length,12);
   assert.equal(easter.assets.length,12);
   assert.ok(easter.assets.every(path=>path.startsWith('data/encrypted/easter/')));
   assert.ok(source(easter.assets.at(-1)).includes('gzip+aes-256-gcm'));
@@ -594,7 +594,7 @@ test('Easter Bunny Bundle adds a fully encrypted, 43-page three-project guide', 
 test('Plush Mermaid Mod ships encrypted with original photos and three independent variations', () => {
   const catalog=JSON.parse(source('data/pattern-catalog.json'));
   const mermaid=catalog.find(item=>item.id==='oakandmarlow-plush-mermaid-mod');
-  assert.equal(catalog.length,11);
+  assert.equal(catalog.length,12);
   assert.ok(mermaid,'Mermaid Mod is missing');
   assert.equal(mermaid.revision,1);
   assert.equal(mermaid.assets.length,17);
@@ -620,7 +620,7 @@ test('Pooh Snuggler integrates encrypted original pages and catalogue metadata',
   const catalog=JSON.parse(source('data/pattern-catalog.json'));
   const pooh=catalog.find(entry=>entry.id==='frauskau-pooh-snuggler');
   assert.ok(pooh && pooh.revision===1);
-  assert.equal(catalog.length,11);
+  assert.equal(catalog.length,12);
   assert.equal(pooh.assets.length,13);
   assert.ok(pooh.assets.every(path=>path.startsWith('data/encrypted/pooh/')));
   for(const path of pooh.assets) assert.ok(existsSync(new URL('../'+path,import.meta.url)));
@@ -668,4 +668,23 @@ test('Baby Night Dragon Sploot is protected and has selectable styles', () => {
   runInNewContext(source('js/estimates.js'),{window});
   assert.equal(window.SunbeamEstimates.estimateTime({id:dragon.id}), '7–12 hours');
   assert.ok(source('index.html').includes('js/estimates.js?v=dragon-v1'));
+});
+
+test('Teacup Frog ships protected original-page references and cover', () => {
+  const entries=JSON.parse(source('data/pattern-catalog.json'));
+  const frog=entries.find(entry=>entry.id==='hekleguriane-teacup-frog');
+  assert.ok(frog);
+  assert.equal(frog.title,'Teacup Frog');
+  assert.equal(frog.designer,'@hekleguriane.bamser');
+  assert.equal(frog.assets.length,7);
+  assert.ok(frog.assets.every(path=>path.startsWith('data/encrypted/teacup/') && existsSync(new URL('../'+path,import.meta.url))));
+  const loader=source('data/encrypted/teacup/loader.js');
+  assert.ok(loader.includes('gzip+aes-256-gcm'));
+  assert.ok(loader.includes('keySource'));
+  const covers=JSON.parse(source('data/encrypted/cover-previews.json'));
+  assert.ok(covers.covers[frog.id]?.iv && covers.covers[frog.id]?.ciphertext);
+  const window={};
+  runInNewContext(source('js/estimates.js'),{window});
+  assert.equal(window.SunbeamEstimates.estimateFor(frog).min,3);
+  assert.equal(window.SunbeamEstimates.estimateFor(frog).max,5);
 });

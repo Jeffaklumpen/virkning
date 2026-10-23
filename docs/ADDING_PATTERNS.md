@@ -54,3 +54,5 @@ are necessary. Bump the service-worker cache version when changing the bundle.
 - Luna the Druid (Gabriele Keppeler / mrs.geegee.s): 22-page encrypted personal guide, 44 navigable steps, 12 sections and 22 protected original PDF-page references. ID: `mrsgeegees-luna-the-druid`. Never commit plaintext/PDF, and respect the designer's redistribution restrictions.
 
 - Baby Night Dragon Sploot (Shannon Munro): AES-256-GCM/gzip encrypted guide in `data/encrypted/dragon/`, 39 steps, Night/Light variants and all 14 encrypted PDF-page references. Never commit unencrypted source material.
+
+- Teacup Frog (@hekleguriane.bamser): nine original PDF pages, 29 navigable steps, eight sections, separate protected cover, and protected, lazy-loaded pages. ID: `hekleguriane-teacup-frog`; files in `data/encrypted/teacup/`. Never publish the source document unencrypted.

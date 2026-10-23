@@ -98,3 +98,7 @@ AES-GCM/gzip protected guide with 44 navigable steps in 12 sections, 22 protecte
 ## Baby Night Dragon Sploot (Snugglebeans Crochet)
 
 Shannon Munro's 14-page Sploot Series guide is packaged as an AES-GCM/gzip protected, lazy-loaded pattern with 39 navigable steps across 11 sections. It includes all 14 original page references plus protected photographs, and selectable Night Dragon / Light Dragon instructions for horns, head and tail fins. Page references and cover photography are encrypted; the original PDF and plaintext are never committed. Editorial active-crafting estimate: 7–12 hours. Respect the designer's restrictions on digital redistribution.
+
+## Teacup Frog (@hekleguriane.bamser)
+
+The nine-page free pattern is packaged as a private AES-GCM/gzip encrypted, lazy-loaded guide with 29 navigable steps in eight sections. All nine original PDF pages are protected, zoomable references alongside the instructions, with a separate encrypted cover for the grid. The steps cover the frog head and body, cup foot, rim, handle, embroidered smile, and floral decorations. Estimated making time: 3–5 active hours. The plaintext source/PDF is not committed; respect the designer's no-redistribution request.
