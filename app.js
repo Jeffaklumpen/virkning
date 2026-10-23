@@ -6,7 +6,7 @@
   const $=(s)=>document.querySelector(s);
   const el=$('#app');
   const modal=$('#modal-root');
-  let patterns=[], activeId=null, activeStep=null, activeGroup=null, progress={};
+  let patterns=[], activeId=null, activeStep=null, activeGroup=null, progress={}, authKey=null;
   const esc=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const icon=(name)=>`<svg class="small-icon" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
   const safeImage=(src)=> typeof src==='string' && (/^data:image\/(jpeg|png|webp|gif);base64,/i.test(src)||/^assets\/[a-zA-Z0-9_.\/-]+$/.test(src)) ? src : '';
@@ -25,8 +25,138 @@
   function getPattern(){return patterns.find(p=>p.id===activeId)}
   function toast(message){document.querySelector('.toast')?.remove();const n=document.createElement('div');n.className='toast';n.textContent=message;document.body.append(n);setTimeout(()=>n.remove(),2900)}
   function dataThumb(p){const src=picture(p,p.cover||'cover');return src?`<img src="${src}" alt="${esc(p.title)}" loading="lazy">`:`<span class="pattern-thumb-placeholder">🧶</span>`}
-  function renderLibrary(){activeId=null;activeStep=null;const started=patterns.length?patterns.map(p=>({p,pr:loadProgress(p.id),n:stats(p,loadProgress(p.id))})).sort((a,b)=>(b.pr.updatedAt||'').localeCompare(a.pr.updatedAt||'')):[];const locked=(Array.isArray(window.SUNBEAM_ENCRYPTED_GUIDES)?window.SUNBEAM_ENCRYPTED_GUIDES:[]).filter(g=>!patterns.some(p=>p.id===g.id));
-    el.innerHTML=`<section class="hero"><div class="hero-content"><span class="kicker">a cozy little hive of creativity</span><h1>Hey there, <em>Kimsi!</em> <span class="hero-sun" aria-hidden="true">☀</span></h1><p class="lead">Welcome to your sunny little crochet studio. Tiny handmade friends, lovely patterns and every stitch saved right where you left off.</p><div class="hero-actions">${started.length?`<button class="btn btn-primary" data-action="open" data-id="${esc(started[0].p.id)}">${icon('heart')} Continue crocheting</button>`:''}${!started.length&&locked.length?`<button class="btn btn-primary" data-action="unlock-guide" data-id="${esc(locked[0].id)}">Unlock my patterns ${icon('arrow')}</button>`:''}</div></div><div class="hero-art" aria-hidden="true"><span class="floating-star"></span><div class="illustration"><img class="hero-bee" src="assets/sunbeam-bee.svg" alt="" /></div><span class="bee-flight-dots" aria-hidden="true"></span><span class="floating-heart">♡</span></div></section><div class="section-heading"><div><h2>Your pattern garden <span class="sunbeam-section-flower" aria-hidden="true">✿</span></h2><p>A growing garden of lovely little handmade friends.</p></div><span class="count-pill">${patterns.length+locked.length} pattern${patterns.length+locked.length===1?'':'s'}</span></div><section class="pattern-grid">${started.map(({p,n})=>`<button class="pattern-card" data-action="open" data-id="${esc(p.id)}"><div class="pattern-thumb">${dataThumb(p)}${n.percent===100?'<span class="pattern-complete-badge">✓ Finished</span>':''}</div><div class="pattern-body"><span class="badge">♡ ${esc(p.difficulty||'Crochet')}</span><h3>${esc(p.title)}</h3><div class="micro">${esc(p.designer||'My pattern')} · ${esc(p.category||'Amigurumi')}</div><div class="pattern-progress"><div class="progress-track"><div class="progress-fill" style="width:${n.percent}%"></div></div></div><div class="pattern-foot"><span class="micro">${n.percent===100?'Yay! All finished ✨':`${n.percent}% complete`}</span><span style="color:#c5849a">${icon('chevron')}</span></div></div></button>`).join('')}${locked.map(g=>`<button class="pattern-card pattern-card-locked" data-action="unlock-guide" data-id="${esc(g.id)}"><div class="pattern-thumb"><img src="${safeImage(g.cover)||'favicon.svg'}" alt="Illustration of ${esc(g.title)}" loading="lazy"/><span class="pattern-private-tag">Private pattern</span></div><div class="pattern-body"><span class="badge">For Kimsi ♡</span><h3>${esc(g.title)}</h3><div class="micro">${esc(g.designer)} · Amigurumi</div><div class="pattern-foot"><span class="private-card-action">Unlock your guide</span><span style="color:#9b793d">${icon('chevron')}</span></div></div></button>`).join('')}${patterns.length+locked.length ? '' : '<div class="library-empty"><span class="flower">✿</span><strong>A little magic is on its way!</strong><span class="micro">Your crochet patterns will bloom here soon.</span></div>'}</section><p class="small-note" style="margin:23px 4px">✦ Your crochet progress is saved automatically in this browser. It does not sync between devices.</p>`;
+
+  // A single password unlocks all encrypted personal patterns. No password is
+  // embedded in the website; an unextractable browser key can be remembered.
+  const AUTH_DB='sunbeam-art-login-v1';
+  const AUTH_STORE='auth';
+  const authSettings=()=>window.SUNBEAM_AUTH_CONFIG;
+  function base64Bytes(encoded){return Uint8Array.from(atob(encoded),char=>char.charCodeAt(0))}
+  function authDbOpen(){return new Promise((resolve,reject)=>{
+    const request=indexedDB.open(AUTH_DB,1);
+    request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(AUTH_STORE))request.result.createObjectStore(AUTH_STORE)};
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error||new Error('Storage unavailable'));
+  })}
+  async function savedAuthKey(){
+    const db=await authDbOpen();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(AUTH_STORE,'readonly');
+      const req=tx.objectStore(AUTH_STORE).get('remembered-key');
+      req.onsuccess=()=>{db.close();resolve(req.result||null)};
+      req.onerror=()=>{db.close();reject(req.error)};
+    });
+  }
+  async function rememberAuthKey(key){
+    const db=await authDbOpen();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(AUTH_STORE,'readwrite');
+      tx.objectStore(AUTH_STORE).put(key,'remembered-key');
+      tx.oncomplete=()=>{db.close();resolve()};
+      tx.onerror=()=>{db.close();reject(tx.error)};
+    });
+  }
+  async function forgetAuthKey(){
+    try{
+      const db=await authDbOpen();
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(AUTH_STORE,'readwrite');
+        tx.objectStore(AUTH_STORE).delete('remembered-key');
+        tx.oncomplete=()=>{db.close();resolve()};
+        tx.onerror=()=>{db.close();reject(tx.error)};
+      });
+    }catch(error){/* If storage is unavailable, require a new password next visit. */}
+  }
+  function renderLogin(message=''){
+    activeId=null;activeStep=null;
+    el.innerHTML=`<section class="sunbeam-login" aria-label="Private login">
+      <div class="sunbeam-login-card">
+        <div class="login-bee-halo" aria-hidden="true"><img src="assets/sunbeam-bee.svg" alt="" class="login-bee-image" /></div>
+        <span class="kicker">a little hive of handmade magic</span>
+        <h1>Welcome to <em>Sunbeam Art!</em></h1>
+        <p class="login-subtitle">A cozy creative corner, just for Kimsi. Enter your password to see your patterns and pick up right where you left off.</p>
+        <form id="sunbeam-login-form" autocomplete="on">
+          <label for="sunbeam-password">Your password</label>
+          <input type="password" id="sunbeam-password" name="password" autocomplete="current-password" required placeholder="Enter password" />
+          <p id="sunbeam-login-error" class="login-error" role="alert" aria-live="polite">${esc(message)}</p>
+          <button type="submit" id="sunbeam-login-submit" class="btn btn-primary">Open my little hive <span aria-hidden="true">➜</span></button>
+        </form>
+        <p class="login-remember-note">♡ Stay signed in on this device — no need to enter your password every time.</p>
+      </div>
+    </section>`;
+    el.querySelector('#sunbeam-login-form')?.addEventListener('submit',event=>{
+      event.preventDefault();
+      signInWithPassword();
+    });
+  }
+  async function derivePasswordKey(password){
+    const config=authSettings();
+    if(!config||!crypto?.subtle)throw Error('Secure login requires HTTPS and a modern browser.');
+    const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);
+    return crypto.subtle.deriveKey({
+      name:'PBKDF2',salt:base64Bytes(config.salt),iterations:config.iterations,hash:'SHA-256'
+    },material,{name:'AES-GCM',length:256},false,['decrypt']);
+  }
+  async function unwrapPrivatePatternKey(loginKey){
+    const config=authSettings();
+    const raw=await crypto.subtle.decrypt({
+      name:'AES-GCM',iv:base64Bytes(config.iv),
+      additionalData:new TextEncoder().encode('sunbeam-art-auth-v1')
+    },loginKey,base64Bytes(config.wrappedKey));
+    return crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},false,['decrypt']);
+  }
+  async function loadPrivatePatterns(patternKey){
+    const entries=Array.isArray(window.SUNBEAM_ENCRYPTED_GUIDES)?window.SUNBEAM_ENCRYPTED_GUIDES:[];
+    const already=await getAllGuides();
+    for(const item of entries){
+      if(already.some(g=>g.id===item.id))continue;
+      if(!window.DecompressionStream)throw Error('This browser version cannot unpack private patterns. Update Safari or Chrome.');
+      const zipped=await crypto.subtle.decrypt({
+        name:'AES-GCM',iv:base64Bytes(item.iv),
+        additionalData:new TextEncoder().encode('sunbeam-art-tooth-v1')
+      },patternKey,base64Bytes(item.ciphertext));
+      const json=await new Response(new Blob([zipped]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+      const guide=JSON.parse(json);
+      if(!validPattern(guide)||guide.id!==item.id)throw Error('Invalid private pattern file');
+      await storeGuide(guide);
+    }
+  }
+  async function enterLibrary(loginKey){
+    const patternKey=await unwrapPrivatePatternKey(loginKey);
+    await loadPrivatePatterns(patternKey);
+    // Existing local guides and progress are preserved: neither database is cleared.
+    patterns=await getAllGuides();
+    if(Array.isArray(window.KIMSI_PRELOADED_GUIDES)){
+      for(const guide of window.KIMSI_PRELOADED_GUIDES){
+        if(validPattern(guide)&&!patterns.some(p=>p.id===guide.id))await storeGuide(guide);
+      }
+      patterns=await getAllGuides();
+    }
+    authKey=loginKey;
+    renderLibrary();
+  }
+  async function signInWithPassword(){
+    const field=el.querySelector('#sunbeam-password');
+    const message=el.querySelector('#sunbeam-login-error');
+    const submit=el.querySelector('#sunbeam-login-submit');
+    const password=field?.value||'';
+    if(!password)return;
+    if(submit){submit.disabled=true;submit.textContent='Opening your hive…'}
+    if(message)message.textContent='';
+    try{
+      const loginKey=await derivePasswordKey(password);
+      // Decrypt first: a wrong password never grants access.
+      await enterLibrary(loginKey);
+      try{await rememberAuthKey(loginKey)}catch(error){toast('Signed in ♡ Your browser could not remember this login.')}
+    }catch(error){
+      if(message)message.textContent=(String(error.message||'').includes('browser')||String(error.message||'').includes('HTTPS'))?error.message:'That password wasn’t quite right. Please try again ♡';
+      if(submit){submit.disabled=false;submit.textContent='Open my little hive ➜'}
+      field?.focus();
+    }
+  }
+
+  function renderLibrary(){if(!authKey)return renderLogin();activeId=null;activeStep=null;const started=patterns.length?patterns.map(p=>({p,pr:loadProgress(p.id),n:stats(p,loadProgress(p.id))})).sort((a,b)=>(b.pr.updatedAt||'').localeCompare(a.pr.updatedAt||'')):[];
+    el.innerHTML=`<section class="hero"><div class="hero-content"><span class="kicker">a cozy little hive of creativity</span><h1>Hey there, <em>Kimsi!</em> <span class="hero-sun" aria-hidden="true">☀</span></h1><p class="lead">Welcome to your sunny little crochet studio. Tiny handmade friends, lovely patterns and every stitch saved right where you left off.</p><div class="hero-actions">${started.length?`<button class="btn btn-primary" data-action="open" data-id="${esc(started[0].p.id)}">${icon('heart')} Continue crocheting</button>`:''}</div></div><div class="hero-art" aria-hidden="true"><span class="floating-star"></span><div class="illustration"><img class="hero-bee" src="assets/sunbeam-bee.svg" alt="" /></div><span class="bee-flight-dots" aria-hidden="true"></span><span class="floating-heart">♡</span></div></section><div class="section-heading"><div><h2>Your pattern garden <span class="sunbeam-section-flower" aria-hidden="true">✿</span></h2><p>A growing garden of lovely little handmade friends.</p></div><span class="count-pill">${patterns.length} pattern${patterns.length===1?'':'s'}</span></div><section class="pattern-grid">${started.map(({p,n})=>`<button class="pattern-card" data-action="open" data-id="${esc(p.id)}"><div class="pattern-thumb">${dataThumb(p)}${n.percent===100?'<span class="pattern-complete-badge">✓ Finished</span>':''}</div><div class="pattern-body"><span class="badge">♡ ${esc(p.difficulty||'Crochet')}</span><h3>${esc(p.title)}</h3><div class="micro">${esc(p.designer||'My pattern')} · ${esc(p.category||'Amigurumi')}</div><div class="pattern-progress"><div class="progress-track"><div class="progress-fill" style="width:${n.percent}%"></div></div></div><div class="pattern-foot"><span class="micro">${n.percent===100?'Yay! All finished ✨':`${n.percent}% complete`}</span><span style="color:#c5849a">${icon('chevron')}</span></div></div></button>`).join('')}${patterns.length ? '' : '<div class="library-empty"><span class="flower">✿</span><strong>A little magic is on its way!</strong><span class="micro">Your crochet patterns will bloom here soon.</span></div>'}</section><p class="small-note" style="margin:23px 4px">✦ Your crochet progress is saved automatically in this browser. It does not sync between devices.</p>`;
     window.scrollTo({top:0,behavior:'instant'});
   }
   function renderGuide(stepId){const p=getPattern();if(!p)return renderLibrary();const all=stepsFor(p,progress);if(!all.length)return renderLibrary();if(stepId && all.some(s=>s.id===stepId))activeStep=stepId;else if(!activeStep||!all.some(s=>s.id===activeStep))activeStep=progress.lastStep&&all.some(s=>s.id===progress.lastStep)?progress.lastStep:all[0].id;
@@ -41,7 +171,7 @@
   function jumpGroup(id){const p=getPattern(),group=p?.groups.find(x=>x.id===id);if(!group)return;const step=groupSteps(p,group,progress)[0];if(step)renderGuide(step.id)}
   function jump(delta){const p=getPattern(),all=stepsFor(p,progress),i=all.findIndex(x=>x.id===activeStep);if(i<0)return; if(delta>0){progress.done[activeStep]=true;persist();}const next=all[Math.max(0,Math.min(all.length-1,i+delta))];if(delta>0&&i===all.length-1)return showFinished();renderGuide(next.id)}
   function showFinished(){const p=getPattern(),st=stats(p,progress);const src=picture(p,p.cover||'cover');el.innerHTML=`<button class="back-link" data-action="home">${icon('left')} Back to the pattern garden</button><div class="panel finish-hero"><div class="emoji">🎉 🧶 ✨</div><span class="kicker">you did it!</span><h1 style="font-size:45px">So proud of you, <em style="color:#d787a0">Kimsi!</em></h1>${src?`<img src="${src}" alt="Finished project" style="width:min(270px,100%);height:240px;object-fit:cover;border-radius:24px;margin:5px auto 22px;display:block">`:''}<h2>${esc(p.title)}</h2><p>Another handmade friend, stitched with love and a little sunshine. Your progress is safely saved in this browser.</p><div class="hero-actions" style="justify-content:center"><button class="btn btn-primary" data-action="home">${icon('heart')} Back to the pattern garden</button></div><p class="micro" style="margin-top:20px">${st.complete}/${st.total} steps completed</p></div>`;window.scrollTo(0,0)}
-  function openPattern(id){const p=patterns.find(x=>x.id===id);if(!p)return;activeId=id;progress=loadProgress(id);activeStep=null;renderGuide()}
+  function openPattern(id){if(!authKey)return renderLogin();const p=patterns.find(x=>x.id===id);if(!p)return;activeId=id;progress=loadProgress(id);activeStep=null;renderGuide()}
   function closeModal(){modal.innerHTML='';document.body.style.overflow=''}
   // Give dialog controls their own click listeners. Do not rely on document-level
   // delegation, since overlays or earlier handlers can swallow those clicks.
@@ -60,56 +190,31 @@
     document.body.style.overflow='hidden';
     bindModalControls();
   }
-  // Purchased patterns stay encrypted on the public website. The unlock key is not shipped with the site.
-  function showUnlockDialog(id){
-    const guide=(window.SUNBEAM_ENCRYPTED_GUIDES||[]).find(g=>g.id===id);
-    if(!guide)return;
-    showModal(`<div class="dialog-head"><div><span class="kicker">just for Kimsi</span><h2>Unlock ${esc(guide.title)} ♡</h2></div><button type="button" class="x-btn" data-action="close-modal" aria-label="Close">×</button></div><p>This pattern is private, so its instructions are kept encrypted. Paste your personal unlock code once; your guide and progress will then be saved on this device.</p><label class="unlock-label" for="unlock-code">Your private code</label><input type="password" class="unlock-code-field" id="unlock-code" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Paste your code here" aria-describedby="unlock-error"/><p id="unlock-error" class="unlock-error" role="alert" aria-live="polite"></p><button type="button" class="btn btn-primary" data-action="confirm-unlock-guide" data-id="${esc(id)}">Unlock guide</button><button type="button" class="btn btn-secondary" data-action="close-modal">Not now</button>`);
-    const field=document.getElementById('unlock-code');
-    field?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();unlockPrivateGuide(id)}});
-    field?.focus();
-  }
-  function decodeBase64(value){return Uint8Array.from(atob(value),c=>c.charCodeAt(0))}
-  async function unlockPrivateGuide(id){
-    const entry=(window.SUNBEAM_ENCRYPTED_GUIDES||[]).find(g=>g.id===id);
-    if(!entry)return;
-    const input=document.getElementById('unlock-code');
-    const feedback=document.getElementById('unlock-error');
-    const button=modal.querySelector('[data-action="confirm-unlock-guide"]');
-    const code=(input?.value||'').replace(/\s+/g,'');
-    if(!code){if(feedback)feedback.textContent='Please paste your private unlock code.';return}
-    if(!window.crypto?.subtle || !window.DecompressionStream){if(feedback)feedback.textContent='A newer browser over HTTPS is needed to unlock this guide.';return}
-    if(button)button.disabled=true;
-    if(feedback)feedback.textContent='';
-    try{
-      const keyBytes=decodeBase64(code);
-      if(keyBytes.length!==32)throw Error('Invalid key length');
-      const key=await crypto.subtle.importKey('raw',keyBytes,{name:'AES-GCM'},false,['decrypt']);
-      const compressed=await crypto.subtle.decrypt(
-        {name:'AES-GCM',iv:decodeBase64(entry.iv),additionalData:new TextEncoder().encode('sunbeam-art-tooth-v1')},
-        key,decodeBase64(entry.ciphertext)
-      );
-      const body=await new Response(new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
-      const guide=JSON.parse(body);
-      if(!validPattern(guide)||guide.id!==id)throw Error('Invalid guide');
-      await storeGuide(guide);
-      patterns=await getAllGuides();
-      closeModal();
-      openPattern(id);
-      toast('Your private guide is ready ♡');
-    }catch(error){
-      if(feedback)feedback.textContent="That code didn't work. Check it and try again.";
-      if(button)button.disabled=false;
-    }
-  }
   function showDictionary(){const p=getPattern();let dict=p?.dictionary||{sc:'Single crochet (US terms)',inc:'Increase (2 sc in one stitch)',dec:'Decrease (2 stitches joined into 1)',slst:'Slip stitch',ch:'Chain',FO:'Fasten off',BLO:'Back loops only',FLO:'Front loops only',bo:'Bobble stitch',hdc:'Half double crochet',dc:'Double crochet',htr:'Half treble crochet'};showModal(`<div class="dialog-head"><div><span class="kicker">little helper</span><h2>Stitch dictionary ✿</h2></div><button class="x-btn" data-action="close-modal" aria-label="Close">×</button></div><p>Quick reminders for the abbreviations in this pattern (US terminology).</p><div class="dictionary">${Object.entries(dict).map(([k,v])=>`<div class="dict-item"><b>${esc(k)}</b> ${esc(v)}</div>`).join('')}</div><button class="btn btn-primary" data-action="close-modal">Back to crocheting ♡</button>`)}
   function showZoom(key){const p=getPattern(),src=picture(p,key);if(!src)return;modal.innerHTML=`<div class="dialog-backdrop zoom-backdrop" data-action="close-modal"><button class="x-btn" style="position:absolute;right:20px;top:20px" data-action="close-modal" aria-label="Close">×</button><img class="dialog-img" src="${src}" alt="Enlarged crochet reference photograph"></div>`;document.body.style.overflow='hidden';bindModalControls()}
   function resetConfirm(){const p=getPattern();if(!p)return;showModal(`<div class="dialog-head"><div><span class="kicker">fresh beginning?</span><h2>Restart ${esc(p.title)}?</h2></div><button type="button" class="x-btn" data-action="close-modal" aria-label="Close restart dialog">×</button></div><p>All completed-step checkmarks for this pattern will be cleared. This cannot be undone.</p><button type="button" class="btn btn-primary" data-action="confirm-reset">Yes, start again</button><button type="button" class="btn btn-secondary" data-action="close-modal">Keep my progress</button>`)}
-  async function handleAction(button){const action=button.dataset.action;switch(action){case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'unlock-guide':showUnlockDialog(button.dataset.id);break;case 'confirm-unlock-guide':await unlockPrivateGuide(button.dataset.id);break;case 'step':renderGuide(button.dataset.id);break;case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
+  async function handleAction(button){const action=button.dataset.action;switch(action){case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id);break;case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
   document.addEventListener('click',e=>{const t=e.target.closest('[data-action]');if(!t)return; if(t.classList.contains('dialog-backdrop')&&e.target!==t)return; e.preventDefault();handleAction(t)});
   document.addEventListener('change',e=>{const m=e.target.closest('[data-material]');if(m){progress.materials[m.dataset.material]=m.checked;persist();}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();return}if(!activeId||modal.innerHTML||['TEXTAREA','INPUT','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'){e.preventDefault();jump(1)}else if(e.key==='ArrowLeft'){e.preventDefault();jump(-1)}else if(e.key==='Enter' && document.activeElement?.dataset.action==='zoom'){showZoom(document.activeElement.dataset.key)}});
-  $('#home-btn').addEventListener('click',renderLibrary);
-  async function init(){try{patterns=await getAllGuides();if(Array.isArray(window.KIMSI_PRELOADED_GUIDES)){for(const guide of window.KIMSI_PRELOADED_GUIDES){if(validPattern(guide)&&!patterns.some(x=>x.id===guide.id))await storeGuide(guide)}patterns=await getAllGuides()}renderLibrary()}catch(e){el.innerHTML=`<div class="panel"><h2>Could not open your local pattern library</h2><p>${esc(e.message)}</p><p>Check that this browser allows website storage. Avoid private browsing mode.</p></div>`}}
+  $('#home-btn').addEventListener('click',()=>authKey?renderLibrary():renderLogin());
+  async function init(){
+    if(!window.isSecureContext || !window.crypto?.subtle){
+      renderLogin('Please open Sunbeam Art over HTTPS in Safari or Chrome to sign in.');
+      return;
+    }
+    try{
+      const remembered=await savedAuthKey();
+      if(remembered){
+        try{
+          await enterLibrary(remembered);
+          return;
+        }catch(error){
+          await forgetAuthKey();
+        }
+      }
+    }catch(error){/* IndexedDB can be disabled in private browsing. */}
+    renderLogin();
+  }
   init();
 })();
