@@ -130,7 +130,7 @@ test('fast shell, on-demand encrypted assets and catalogue match', () => {
   const html=source('index.html');
   const sw=source('service-worker.js');
   const catalog=JSON.parse(source('data/pattern-catalog.json'));
-  assert.equal(catalog.length,5);
+  assert.equal(catalog.length,6);
   assert.match(html,/Content-Security-Policy/);
   assert.doesNotMatch(html,/<script\s*>/i);
   assert.match(source('manifest.webmanifest'),/"display": "standalone"/);
@@ -246,7 +246,7 @@ test('login can display an unloaded pattern catalogue without fetching encrypted
   const document={createElement(){inserted++;return {};},head:{appendChild(){}}};
   runInNewContext(source('js/guide-loader.js'),{window,fetch,document,Map,Set,Promise});
   const entries=await window.SunbeamGuides.catalog();
-  assert.equal(entries.length,5);
+  assert.equal(entries.length,6);
   assert.equal(fetched,1);
   assert.equal(inserted,0);
 });
@@ -276,7 +276,7 @@ test('retired guide is absent from the current app, catalogue, assets and PWA ca
   const app=source('js/app.js');
   const worker=source('service-worker.js');
   const catalogue=JSON.parse(source('data/pattern-catalog.json'));
-  assert.equal(catalogue.length,5);
+  assert.equal(catalogue.length,6);
   assert.equal(catalogue.some(entry=>entry.id==='donut-kitty'),false);
   assert.equal(source('js/estimates.js').includes("'donut-kitty':"),false);
   assert.equal(worker.includes('donut-cover.svg'),false);
@@ -468,4 +468,14 @@ test('cover AES-GCM decrypts only with matching guide ID and trusted image data'
   await assert.rejects(window.SunbeamCrypto.decryptCover({
     iv:sealed.iv,ciphertext:Buffer.from(untrusted).toString('base64')
   },id,key));
+});
+
+test('Donut Kitty has protected guide assets and a separately encrypted cover', () => {
+  const entries=JSON.parse(source('data/pattern-catalog.json'));
+  const donut=entries.find(entry=>entry.id==='thewhimsywhale-donut-kitty');
+  assert.ok(donut && donut.assets.length > 1);
+  assert.ok(donut.assets.every(path=>path.startsWith('data/encrypted/donut/')));
+  assert.match(source(donut.assets.at(-1)),/wrappedSessionKey/);
+  assert.ok(JSON.parse(source('data/encrypted/cover-previews.json')).covers[donut.id].wrappedSessionKey);
+  assert.match(source('service-worker.js'),/config\/donut-envelope\.json/);
 });

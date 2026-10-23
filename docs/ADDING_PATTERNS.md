@@ -8,6 +8,8 @@
 - Brie Mouse (Oak and Marlow): AES-256-GCM encrypted gzip JSON with 42 reference photographs in `data/encrypted/brie/` (22 parts and loader), arranged as 51 steps in 10 groups.
 - Cute Loaf Cat (Annie Carraway Art): AES-256-GCM encrypted gzip JSON with photo references and color charts in `data/encrypted/loaf/` (34 parts and loader). Supports solid and spotted variants within one guide.
 
+- Donut Kitty (The Whimsy Whale): AES-256-GCM encrypted guide with RSA-OAEP wrapped session key and separately encrypted original cover; ear-method options are preserved.
+
 ## Add or upgrade a guide safely
 
 1. Start from content you have permission to use; work locally rather than pushing plaintext or PDFs into this public repository.

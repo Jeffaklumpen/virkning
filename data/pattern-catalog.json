@@ -135,5 +135,39 @@
       "data/encrypted/loaf/part-34.js",
       "data/encrypted/loaf/loader.js"
     ]
+  },
+  {
+    "id": "thewhimsywhale-donut-kitty",
+    "title": "Donut Kitty",
+    "designer": "The Whimsy Whale",
+    "revision": 1,
+    "assets": [
+      "data/encrypted/donut/part-01.js",
+      "data/encrypted/donut/part-02.js",
+      "data/encrypted/donut/part-03.js",
+      "data/encrypted/donut/part-04.js",
+      "data/encrypted/donut/part-05.js",
+      "data/encrypted/donut/part-06.js",
+      "data/encrypted/donut/part-07.js",
+      "data/encrypted/donut/part-08.js",
+      "data/encrypted/donut/part-09.js",
+      "data/encrypted/donut/part-10.js",
+      "data/encrypted/donut/part-11.js",
+      "data/encrypted/donut/part-12.js",
+      "data/encrypted/donut/part-13.js",
+      "data/encrypted/donut/part-14.js",
+      "data/encrypted/donut/part-15.js",
+      "data/encrypted/donut/part-16.js",
+      "data/encrypted/donut/part-17.js",
+      "data/encrypted/donut/part-18.js",
+      "data/encrypted/donut/part-19.js",
+      "data/encrypted/donut/part-20.js",
+      "data/encrypted/donut/part-21.js",
+      "data/encrypted/donut/part-22.js",
+      "data/encrypted/donut/part-23.js",
+      "data/encrypted/donut/part-24.js",
+      "data/encrypted/donut/part-25.js",
+      "data/encrypted/donut/loader.js"
+    ]
   }
 ]

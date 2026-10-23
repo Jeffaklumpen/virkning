@@ -1,0 +1,4 @@
+/* Encrypted Donut Kitty: no readable purchased instructions or photographs. */
+window.SUNBEAM_ENCRYPTED_GUIDES=window.SUNBEAM_ENCRYPTED_GUIDES||[];
+window.SUNBEAM_ENCRYPTED_GUIDES.push({"id":"thewhimsywhale-donut-kitty","title":"Donut Kitty","designer":"The Whimsy Whale","revision":1,"format":"gzip+aes-256-gcm+rsa-oaep","keySource":"donut-rsa","aad":"sunbeam-art-donut-kitty-v1","iv":"hFOEbo6aGq+FP1yh","wrappedSessionKey":"1vrUCik0Io6Kr2r01gpxuTYio/FZO55QGFv/4IO6RnO+GZep/qZc5M378XKWk1agmV8YC8oZPu+Jg2L5YQWEpSjaMAbs0durJDKg7jmHWOuSu8RSkVGcp8VgAJtgSdr8T5oicziAyYkQnVvbdT5GlzlxJn/sXzti9QkQd0toqCGAE7eYlAnW20i6rQf0cqjV7bJ4JY9j6kN9sm6C2g9MVIK+xZZUvNGLUDioQAJ4IuRCoWVsxxcJBns4J7tKzNMYRnnrVXIEDqy7iCRFOEJ1n75i1UfjxnmEIWh8DfWpooni7aFBlb+79ocUo5TgSgi5RUfFgSu8wCSot4uJ3ChM6Q==","ciphertext":window.SUNBEAM_DONUT_PARTS.join("")});
+delete window.SUNBEAM_DONUT_PARTS;
