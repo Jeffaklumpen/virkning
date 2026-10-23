@@ -451,3 +451,21 @@ test('the library uses small encrypted covers instead of bulk background guide d
   assert.match(sw,/data\/encrypted\/cover-previews\.json/);
   assert.doesNotMatch(sw,/part-01\.js/);
 });
+
+test('cover AES-GCM decrypts only with matching guide ID and trusted image data', async () => {
+  const {window}=sandbox();
+  const key=await webcrypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  const id='test-guide';
+  const iv=webcrypto.getRandomValues(new Uint8Array(12));
+  const src='data:image/webp;base64,AAAA';
+  const aad=new TextEncoder().encode('sunbeam-cover:'+id+':v1');
+  const ciphertext=await webcrypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad},key,new TextEncoder().encode(src));
+  const sealed={iv:Buffer.from(iv).toString('base64'),ciphertext:Buffer.from(ciphertext).toString('base64')};
+  assert.equal(await window.SunbeamCrypto.decryptCover(sealed,id,key),src);
+  await assert.rejects(window.SunbeamCrypto.decryptCover(sealed,'other-guide',key));
+  const untrusted=await webcrypto.subtle.encrypt(
+    {name:'AES-GCM',iv,additionalData:aad},key,new TextEncoder().encode('javascript:alert(1)'));
+  await assert.rejects(window.SunbeamCrypto.decryptCover({
+    iv:sealed.iv,ciphertext:Buffer.from(untrusted).toString('base64')
+  },id,key));
+});
