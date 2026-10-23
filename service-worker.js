@@ -1,12 +1,17 @@
 /* Sunbeam Art — small offline shell for an iPad home-screen web app. */
 'use strict';
-const CACHE = 'sunbeam-art-offline-v5';
+const CACHE = 'sunbeam-art-offline-v6';
 const SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./css/styles.css",
-  "./css/sunbeam.css",
+  "./css/base.css",
+  "./css/components.css",
+  "./css/theme.css",
+  "./js/storage.js",
+  "./js/crypto.js",
+  "./js/patterns.js",
+  "./js/pwa.js",
   "./js/app.js",
   "./config/auth-config.js",
   "./data/encrypted/tooth.js",

@@ -7,3 +7,11 @@
 .env
 .env.*
 .DS_Store
+
+# Never commit private originals, local keys or decrypted assets
+/private-patterns/
+/data/plaintext/
+*.secret
+*.key
+*.pem
+*.p12
