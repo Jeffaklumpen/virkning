@@ -163,3 +163,66 @@ a{color:#9D671D}
   .step-actions{background:#FFFDFAF2;border-color:#EEE2D2}
 }
 @media(prefers-reduced-motion:reduce){.hero-art .illustration{animation:none}.btn,.pattern-card{transition:none}}
+
+/* Bees take flight: no cat illustration or colored blob behind the mascot. */
+.hero-art{isolation:isolate}
+.hero-art .illustration{
+  background:transparent;
+  box-shadow:none;
+  border-radius:0;
+  width:285px;height:285px;
+  animation:none;
+  position:relative;
+}
+.hero-art .illustration::before{
+  content:"";
+  position:absolute;
+  width:48%;height:14px;
+  left:26%;bottom:14px;
+  background:rgba(166,123,50,.13);
+  filter:blur(12px);
+  border-radius:50%;
+  animation:bee-shadow 4.5s ease-in-out infinite;
+}
+.hero-art .illustration::after{content:"✧";top:22px;right:10px;color:#E9BC65}
+.hero-bee{
+  width:100%;height:100%;display:block;object-fit:contain;
+  filter:drop-shadow(0 13px 8px rgba(143,95,32,.13));
+  animation:bee-hover 4.5s ease-in-out infinite;
+  transform-origin:center center;
+  position:relative;
+  z-index:1;
+}
+.bee-flight-dots{
+  pointer-events:none;
+  position:absolute;
+  top:12%;left:4%;
+  font-size:26px;letter-spacing:12px;
+  color:#E3B759;
+  transform:rotate(-19deg);
+}
+@keyframes bee-hover{
+  0%,100%{transform:translateY(2px) rotate(-7deg)}
+  50%{transform:translateY(-17px) rotate(6deg)}
+}
+@keyframes bee-shadow{
+  0%,100%{opacity:.85;transform:scale(.85)}
+  50%{opacity:.37;transform:scale(1.1)}
+}
+.mobile-dictionary-btn{display:none}
+@media(max-width:900px){
+  .hero-art .illustration{width:229px;height:229px}
+}
+@media(max-width:700px){
+  .hero-art .illustration{width:190px;height:190px}
+  .mobile-dictionary-btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    width:100%;margin-top:10px;padding:12px 15px;
+    border:1px solid #e8d7b8;border-radius:14px;
+    background:#fff7e8;color:#886432;font-weight:900;font-size:13px;
+  }
+  .bee-flight-dots{left:11%}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-bee,.hero-art .illustration::before{animation:none}
+}
