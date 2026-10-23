@@ -1,6 +1,6 @@
 /* Sunbeam Art — small offline shell for an iPad home-screen web app. */
 'use strict';
-const CACHE = 'sunbeam-art-offline-v7';
+const CACHE = 'sunbeam-art-offline-v8';
 const SHELL = [
   "./",
   "./index.html",
@@ -52,6 +52,29 @@ const SHELL = [
   "./data/encrypted/appa/part-22.js",
   "./data/encrypted/appa/part-23.js",
   "./data/encrypted/appa/loader.js",
+  "./data/encrypted/brie/part-01.js",
+  "./data/encrypted/brie/part-02.js",
+  "./data/encrypted/brie/part-03.js",
+  "./data/encrypted/brie/part-04.js",
+  "./data/encrypted/brie/part-05.js",
+  "./data/encrypted/brie/part-06.js",
+  "./data/encrypted/brie/part-07.js",
+  "./data/encrypted/brie/part-08.js",
+  "./data/encrypted/brie/part-09.js",
+  "./data/encrypted/brie/part-10.js",
+  "./data/encrypted/brie/part-11.js",
+  "./data/encrypted/brie/part-12.js",
+  "./data/encrypted/brie/part-13.js",
+  "./data/encrypted/brie/part-14.js",
+  "./data/encrypted/brie/part-15.js",
+  "./data/encrypted/brie/part-16.js",
+  "./data/encrypted/brie/part-17.js",
+  "./data/encrypted/brie/part-18.js",
+  "./data/encrypted/brie/part-19.js",
+  "./data/encrypted/brie/part-20.js",
+  "./data/encrypted/brie/part-21.js",
+  "./data/encrypted/brie/part-22.js",
+  "./data/encrypted/brie/loader.js",
   "./assets/sunbeam-bee.svg",
   "./assets/sunbeam-icon-180.png",
   "./assets/sunbeam-icon-192.png",

@@ -5,7 +5,7 @@ The app is a classic static site: each `<script defer>` publishes a single small
 - `js/storage.js`: IndexedDB schemas (existing database and keys are preserved), AES-GCM encryption at rest, progress in localStorage, remembered login key.
 - `js/crypto.js`: PBKDF2 key derivation, master-key unwrap and encrypted bundled pattern decoding.
 - `js/patterns.js`: pure pattern validation, steps, completion summaries and safe HTML/image helpers.
-- `js/app.js`: login workflow, library rendering, guide UI, dialogs, navigation, user actions, import and data migration orchestration.
+- `js/app.js`: login workflow, library rendering, guide UI, dialogs, navigation, user actions and data migration orchestration.
 - `js/pwa.js`: registers the service worker; no inline JavaScript is needed.
 - `css/base.css`: core variables, reset, typography and app shell.
 - `css/components.css`: reusable UI elements and responsive base rules.
@@ -13,7 +13,7 @@ The app is a classic static site: each `<script defer>` publishes a single small
 
 ## Guide and progress continuity
 
-Do not change existing guide IDs. Completion entries are stored in localStorage under `kimsi-progress:<id>` and are not removed during migration or logout. IndexedDB `kimsi-cozy-guides-v1` keeps the same `guides` store keyed by guide ID. After successful password unlock, old plaintext entries become AES-GCM records; newly imported patterns are immediately encrypted before storage.
+Do not change existing guide IDs. Completion entries are stored in localStorage under `kimsi-progress:<id>` and are not removed during migration or logout. IndexedDB `kimsi-cozy-guides-v1` keeps the same `guides` store keyed by guide ID. After successful password unlock, old plaintext entries become AES-GCM records; newly bundled patterns are encrypted before being stored. Manual file importing has been removed.
 
 ## Publishing checklist
 

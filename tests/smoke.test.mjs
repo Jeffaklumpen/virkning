@@ -127,10 +127,20 @@ test('all local scripts/styles are cached and inline JavaScript stays disabled',
     'js/app.js','js/storage.js','js/crypto.js','js/patterns.js','js/pwa.js',
     'css/base.css','css/components.css','css/theme.css',
     ...Array.from({length:23},(_,i) => 'data/encrypted/appa/part-' + String(i+1).padStart(2,'0') + '.js'),
-    'data/encrypted/appa/loader.js'
+    'data/encrypted/appa/loader.js',
+    ...Array.from({length:22},(_,i) => 'data/encrypted/brie/part-' + String(i+1).padStart(2,'0') + '.js'),
+    'data/encrypted/brie/loader.js'
   ]) {
     assert.ok(html.includes(file), file + ' missing from HTML');
     assert.ok(sw.includes(file), file + ' missing from cache');
   }
   assert.match(source('manifest.webmanifest'), /"display": "standalone"/);
+});
+
+
+test('manual private-pattern import interface and handlers are absent', () => {
+  const html = source('index.html');
+  const app = source('js/app.js');
+  assert.doesNotMatch(html, /guide-import-file/);
+  assert.doesNotMatch(app, /importPrivateGuide|import-guide|guide-import-file|Import private pattern/);
 });

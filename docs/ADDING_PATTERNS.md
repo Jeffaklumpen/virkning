@@ -5,7 +5,8 @@
 - Little Tooth: AES-256-GCM encrypted gzip JSON stored in `data/encrypted/tooth.js`
 - Baby Boba Bunny: AES-256-GCM encrypted gzip JSON split across numbered files in `data/encrypted/bunny/`
 - Baby Appa (Huniebeecrafts): AES-256-GCM encrypted gzip JSON including individual high-resolution reference photos in `data/encrypted/appa/` (23 parts and loader). Includes 62 steps and source color-coded round strips.
-- Donut Kitty: **not bundled** because the previous public asset was unencrypted; already installed copies in IndexedDB remain available, and local import is supported.
+- Brie Mouse (Oak and Marlow): AES-256-GCM encrypted gzip JSON with 42 reference photographs in `data/encrypted/brie/` (22 parts and loader), arranged as 51 steps in 10 groups.
+- Donut Kitty: **not bundled** because the previous public asset was unencrypted; existing on-device copies remain available, but manual in-app importing is no longer offered.
 
 ## Add or upgrade a guide safely
 
@@ -14,8 +15,6 @@
 3. Encrypt locally using Web Crypto AES-256-GCM, with a fresh random 96-bit nonce and authenticated associated data. Never commit the password, derived encryption key, or unencrypted material.
 4. Put the ciphertext and public metadata in `data/encrypted/<pattern-name>/`; refer to the files in order from `index.html`. Add every file to the offline shell in `service-worker.js`.
 5. Increment the guide `revision` metadata and service-worker cache version, then test login, step images, saved progress, and offline mode on an iPad.
-
-Local import accepts either guide JSON or the historical `window.KIMSI_PRELOADED_GUIDES = [...];` format. This import is strictly client-side and does not publish content to GitHub.
 
 ## Local encryption helper (Node.js 20+)
 

@@ -16,6 +16,7 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `data/encrypted/tooth.js` — encrypted Little Tooth guide
 - `data/encrypted/bunny/` — encrypted Baby Boba Bunny (12 high-resolution parts and loader)
 - `data/encrypted/appa/` — encrypted Baby Appa guide (23 high-resolution ciphertext parts and loader)
+- `data/encrypted/brie/` — encrypted Brie Mouse guide (22 ciphertext parts and loader; 51 steps, 42 original reference images)
 - `assets/` — app icons and decorative SVGs
 
 ## Important privacy notes
@@ -24,7 +25,7 @@ This repository and its static hosting are **public**. The site's client-side pa
 
 The legacy `private-guide.js` contained an **unencrypted purchased Donut Kitty guide**, so it has been removed from the current repository tree and site. **Past Git commits, forks, and third-party caches may still contain the original plaintext.** Deleting a file in a new commit cannot erase Git history. Do not assume this original content is fully private.
 
-Donut Kitty already installed on a device remains stored locally in IndexedDB. On a fresh device, the owner can click **Import private pattern** in the library and select a *locally held* matching JSON guide or original `private-guide.js` exported earlier. Files are read directly in the browser and are not uploaded. Never re-add the plaintext file to the public repository.
+Donut Kitty already installed on a device remains stored locally in IndexedDB. This release removes the manual file-import button and import code. On a new device Donut Kitty is not bundled and therefore will not appear automatically. Never re-add its original plaintext file to the public repository.
 
 ## Storage and upgrades
 
