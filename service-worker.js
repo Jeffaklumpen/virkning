@@ -1,6 +1,6 @@
 /* Sunbeam Art — small offline shell for an iPad home-screen web app. */
 'use strict';
-const CACHE = 'sunbeam-art-offline-v3';
+const CACHE = 'sunbeam-art-offline-v4';
 const SHELL = [
   './',
   './index.html',
@@ -11,11 +11,19 @@ const SHELL = [
   './private-guide.js',
   './auth-config.js',
   './encrypted-guides.js',
-  './boba-part-1.js',
-  './boba-part-2.js',
-  './boba-part-3.js',
-  './boba-part-4.js',
-  './boba-guide-loader.js',
+  './boba-sharp-part-01.js',
+  './boba-sharp-part-02.js',
+  './boba-sharp-part-03.js',
+  './boba-sharp-part-04.js',
+  './boba-sharp-part-05.js',
+  './boba-sharp-part-06.js',
+  './boba-sharp-part-07.js',
+  './boba-sharp-part-08.js',
+  './boba-sharp-part-09.js',
+  './boba-sharp-part-10.js',
+  './boba-sharp-part-11.js',
+  './boba-sharp-part-12.js',
+  './boba-sharp-loader.js',
   './assets/sunbeam-bee.svg',
   './assets/sunbeam-icon-180.png',
   './assets/sunbeam-icon-192.png',
