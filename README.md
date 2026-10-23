@@ -8,6 +8,7 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `manifest.webmanifest`, `service-worker.js` — install metadata and offline cache
 - `js/app.js` — login, state, navigation, and interactive crochet actions
 - `js/views.js` — library, guide and completion HTML templates
+- `js/overview.js` and `css/overview.css` — single-page, scrollable guide overview with sections, step navigation and original images
 - `js/guide-loader.js` — small public catalogue and on-demand encrypted-file loader
 - `js/previews.js` — creates compact on-device cover previews after a pattern opens
 - `data/pattern-catalog.json` — metadata and ordered assets for all bundled guides
@@ -70,3 +71,9 @@ Run `node --test tests/smoke.test.mjs` to check the public catalogue, module dep
 The grid displays original photographs rather than illustrated substitutes. After unlocking, it uses encrypted previews from device storage or automatically fetches encrypted guides to create small on-device thumbnails. The first visit can briefly show “Loading photo…” while images are prepared.
 
 Removing a guide from the visible library does not delete saved progress or encrypted local records. Only the five bundled patterns appear in the app; older device data is preserved for safety.
+
+## Full pattern overview
+
+Open any guide and tap **Pattern overview** near “Back to patterns”. The app switches to a single long, scrollable overview: all steps in their original order, grouped by section, including instructions, material details, all available reference photos, tips, warnings, and current completion status. The sticky section bar lets you jump to any chapter; **Open this step** returns directly to that step in the normal guide. **Back to guide** returns to the step you were reading. The overview is read-only: it does not mark steps complete or reset progress.
+
+The overview respects the saved ear-method and solid/spotted variant selection, showing exactly the steps visible in the normal guide. Change choices in the regular step-by-step view, then open Overview to see the revised list. Photos are accessed only from the locally decrypted guide and are lazy-loaded in the long overview to reduce initial rendering work. No new unencrypted pattern assets or personal guide content are committed.
