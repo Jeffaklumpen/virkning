@@ -7,6 +7,7 @@
 
   const ESTIMATES = Object.freeze({
     'sambrosis-tooth': {min: 3, max: 5},
+    'frauskau-pooh-snuggler': {min: 7, max: 12},
     'krochet-by-kris-easter-bunny-bundle': {min: 16, max: 26},
     'oakandmarlow-plush-mermaid-mod': {min: 2, max: 4},
     'sweetpeaplush-baby-boba-bunny': {min: 5, max: 9},

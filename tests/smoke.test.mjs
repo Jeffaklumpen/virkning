@@ -130,7 +130,7 @@ test('fast shell, on-demand encrypted assets and catalogue match', () => {
   const html=source('index.html');
   const sw=source('service-worker.js');
   const catalog=JSON.parse(source('data/pattern-catalog.json'));
-  assert.equal(catalog.length,8);
+  assert.equal(catalog.length,9);
   assert.match(html,/Content-Security-Policy/);
   assert.doesNotMatch(html,/<script\s*>/i);
   assert.match(source('manifest.webmanifest'),/"display": "standalone"/);
@@ -246,7 +246,7 @@ test('login can display an unloaded pattern catalogue without fetching encrypted
   const document={createElement(){inserted++;return {};},head:{appendChild(){}}};
   runInNewContext(source('js/guide-loader.js'),{window,fetch,document,Map,Set,Promise});
   const entries=await window.SunbeamGuides.catalog();
-  assert.equal(entries.length,8);
+  assert.equal(entries.length,9);
   assert.equal(fetched,1);
   assert.equal(inserted,0);
 });
@@ -276,7 +276,7 @@ test('retired guide is absent from the current app, catalogue, assets and PWA ca
   const app=source('js/app.js');
   const worker=source('service-worker.js');
   const catalogue=JSON.parse(source('data/pattern-catalog.json'));
-  assert.equal(catalogue.length,8);
+  assert.equal(catalogue.length,9);
   assert.equal(catalogue.some(entry=>entry.id==='donut-kitty'),false);
   assert.equal(source('js/estimates.js').includes("'donut-kitty':"),false);
   assert.equal(worker.includes('donut-cover.svg'),false);
@@ -499,7 +499,7 @@ test('overview back-to-top button is accessible, scroll-aware and works on iPad'
   assert.match(css,/safe-area-inset-bottom/);
   assert.match(css,/@media\(max-width:700px\)/);
   assert.match(source('index.html'),/js\/app.js\?v=motion-v1/);
-  assert.match(source('service-worker.js'),/sunbeam-art-offline-v21/);
+  assert.match(source('service-worker.js'),/sunbeam-art-offline-v22/);
 });
 
 test('screen transitions preserve immediate rendering and guide-step controls', () => {
@@ -569,7 +569,7 @@ test('all screens load accessible lightweight motion assets without changing pri
   assert.match(css,/::view-transition-old\(sunbeam-page\)/);
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/\.dialog-backdrop/);
-  assert.match(sw,/sunbeam-art-offline-v21/);
+  assert.match(sw,/sunbeam-art-offline-v22/);
   assert.match(sw,/\.\/js\/motion\.js/);
   assert.match(sw,/\.\/css\/motion\.css/);
 });
@@ -578,7 +578,7 @@ test('Easter Bunny Bundle adds a fully encrypted, 43-page three-project guide', 
   const entries=JSON.parse(source('data/pattern-catalog.json'));
   const easter=entries.find(entry=>entry.id==='krochet-by-kris-easter-bunny-bundle');
   assert.ok(easter && easter.revision===1);
-  assert.equal(entries.length,8);
+  assert.equal(entries.length,9);
   assert.equal(easter.assets.length,12);
   assert.ok(easter.assets.every(path=>path.startsWith('data/encrypted/easter/')));
   assert.ok(source(easter.assets.at(-1)).includes('gzip+aes-256-gcm'));
@@ -593,7 +593,7 @@ test('Easter Bunny Bundle adds a fully encrypted, 43-page three-project guide', 
 test('Plush Mermaid Mod ships encrypted with original photos and three independent variations', () => {
   const catalog=JSON.parse(source('data/pattern-catalog.json'));
   const mermaid=catalog.find(item=>item.id==='oakandmarlow-plush-mermaid-mod');
-  assert.equal(catalog.length,8);
+  assert.equal(catalog.length,9);
   assert.ok(mermaid,'Mermaid Mod is missing');
   assert.equal(mermaid.revision,1);
   assert.equal(mermaid.assets.length,17);
@@ -612,4 +612,23 @@ test('Plush Mermaid Mod ships encrypted with original photos and three independe
   assert.deepEqual(forStyle('shell'),['shared','shell']);
   assert.deepEqual(forStyle('high-waist'),['shared','high-waist']);
   assert.deepEqual(forStyle('tankini'),['shared','tankini']);
+});
+
+
+test('Pooh Snuggler integrates encrypted original pages and catalogue metadata', () => {
+  const catalog=JSON.parse(source('data/pattern-catalog.json'));
+  const pooh=catalog.find(entry=>entry.id==='frauskau-pooh-snuggler');
+  assert.ok(pooh && pooh.revision===1);
+  assert.equal(catalog.length,9);
+  assert.equal(pooh.assets.length,13);
+  assert.ok(pooh.assets.every(path=>path.startsWith('data/encrypted/pooh/')));
+  for(const path of pooh.assets) assert.ok(existsSync(new URL('../'+path,import.meta.url)));
+  const loader=source(pooh.assets.at(-1));
+  assert.match(loader,/gzip\\+aes-256-gcm/);
+  assert.match(loader,/keySource.*login/);
+  assert.doesNotMatch(loader,/Rnd 1:|Make 2 in mustard|crochet hook 6\\.00/);
+  const covers=JSON.parse(source('data/encrypted/cover-previews.json'));
+  assert.ok(covers.covers[pooh.id]?.ciphertext);
+  assert.ok(source('js/estimates.js').includes(pooh.id));
+  assert.match(source('index.html'),/js\\/estimates\\.js\\?v=pooh-v1/);
 });
