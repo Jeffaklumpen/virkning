@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 390" role="img" aria-label="Four crocheted tooth root shapes are joined into one ring">
+<defs><linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFEF5"/><stop offset="1" stop-color="#F6E8D2"/></linearGradient><pattern id="p" width="16" height="15" patternUnits="userSpaceOnUse"><path d="M1 10Q8 0 15 10" fill="none" stroke="#DCCFC0" stroke-width="1.6"/></pattern></defs>
+<rect width="700" height="390" rx="35" fill="url(#b)"/><text x="32" y="55" fill="#836347" font-family="system-ui" font-size="20" font-weight="700">Make four small roots</text>
+<g transform="translate(37 80)">
+<g fill="#FFFDF7" stroke="#BEAD9B" stroke-width="4"><path d="M10 11Q43-7 72 11L64 94Q41 113 19 93Z"/><path d="M114 11Q147-7 176 11L168 94Q145 113 123 93Z"/><path d="M218 11Q251-7 280 11L272 94Q249 113 227 93Z"/><path d="M322 11Q355-7 384 11L376 94Q353 113 331 93Z"/></g><g fill="url(#p)"><rect x="11" y="9" width="60" height="85"/><rect x="115" y="9" width="60" height="85"/><rect x="219" y="9" width="60" height="85"/><rect x="323" y="9" width="60" height="85"/></g><g fill="#9A805F" font-family="system-ui" font-weight="700" font-size="16" text-anchor="middle"><text x="41" y="132">1</text><text x="145" y="132">2</text><text x="249" y="132">3</text><text x="353" y="132">4</text></g></g>
+<path d="M445 153h60m-16-13 16 13-16 13" stroke="#D9A546" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(531 92)" stroke="#BEAD9B" stroke-width="4" fill="#FFFDF7"><path d="M0 13Q69-19 123 13L120 145Q91 169 74 133Q58 166 39 133Q12 167 2 132Z"/></g>
+<path d="M588 108v144" stroke="#E3B55D" stroke-dasharray="7 10" stroke-width="3"/><text x="530" y="302" fill="#8D724F" font-family="system-ui" font-size="19" font-weight="700">Join into one body</text>
+</svg>
