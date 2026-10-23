@@ -31,4 +31,4 @@ These are device-local. Progress is preserved when pattern IDs stay the same. Cl
 
 ## Development
 
-Use HTTPS (or a secure local development context). Update `index.html` and the service worker cache list when changing scripts, and bump the cache name for offline deployments. Keep purchased pattern source/PDF content out of commits, pull requests, and public assets. Instructions for adding encrypted patterns: [docs/ADDING_PATTERNS.md](docs/ADDING_PATTERNS.md).
+Use HTTPS (or a secure local development context). Update `index.html` and the service worker cache list when changing scripts, and bump the cache name for offline deployments. Keep purchased pattern source/PDF content out of commits, pull requests, and public assets. The local encryption helper is `tools/encrypt-pattern.mjs` (Node 20+). Instructions for adding encrypted patterns: [docs/ADDING_PATTERNS.md](docs/ADDING_PATTERNS.md).

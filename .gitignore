@@ -1,0 +1,9 @@
+# Keep purchased patterns and secrets out of Git
+/private-guide.js
+/local-patterns/
+*.pdf
+*.private.json
+*.kimsi.json
+.env
+.env.*
+.DS_Store

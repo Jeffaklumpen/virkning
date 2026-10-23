@@ -105,7 +105,7 @@
     },loginKey,base64Bytes(config.wrappedKey));
     return crypto.subtle.importKey('raw',raw,{name:'AES-GCM'},false,['decrypt']);
   }
-  async function loadPrivatePatterns(patternKey){
+  async function loadPrivatePatterns(patternKey,loginKey){
     const entries=Array.isArray(window.SUNBEAM_ENCRYPTED_GUIDES)?window.SUNBEAM_ENCRYPTED_GUIDES:[];
     const already=await getAllGuides();
     for(const item of entries){
@@ -113,12 +113,12 @@
       // Upgrade an existing guide when its encrypted source is revised.
       // Completion, current round, and materials are saved separately by pattern ID.
       if(installed && Number(installed.revision||1)>=Number(item.revision||1))continue;
-      if(!window.DecompressionStream)throw Error('This browser version cannot unpack private patterns. Update Safari or Chrome.');
+      if(item.format==='gzip+aes-256-gcm'&&!window.DecompressionStream)throw Error('This browser version cannot unpack private patterns. Update Safari or Chrome.');
       const zipped=await crypto.subtle.decrypt({
         name:'AES-GCM',iv:base64Bytes(item.iv),
         additionalData:new TextEncoder().encode(item.aad || 'sunbeam-art-tooth-v1')
-      },patternKey,base64Bytes(item.ciphertext));
-      const json=await new Response(new Blob([zipped]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+      },item.keySource==='login'?loginKey:patternKey,base64Bytes(item.ciphertext));
+      const json=item.format==='aes-256-gcm' ? new TextDecoder().decode(zipped) : await new Response(new Blob([zipped]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
       const guide=JSON.parse(json);
       if(!validPattern(guide)||guide.id!==item.id)throw Error('Invalid private pattern file');
       await storeGuide({...guide,revision:Math.max(Number(guide.revision||1),Number(item.revision||1))});
@@ -126,7 +126,7 @@
   }
   async function enterLibrary(loginKey){
     const patternKey=await unwrapPrivatePatternKey(loginKey);
-    await loadPrivatePatterns(patternKey);
+    await loadPrivatePatterns(patternKey,loginKey);
     // Existing local guides and progress are preserved: neither database is cleared.
     patterns=await getAllGuides();
     authKey=loginKey;

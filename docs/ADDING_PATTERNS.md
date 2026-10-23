@@ -15,3 +15,15 @@
 5. Increment the guide `revision` metadata and service-worker cache version, then test login, step images, saved progress, and offline mode on an iPad.
 
 Local import accepts either guide JSON or the historical `window.KIMSI_PRELOADED_GUIDES = [...];` format. This import is strictly client-side and does not publish content to GitHub.
+
+## Local encryption helper (Node.js 20+)
+
+Prepare a single guide JSON file or an existing private `window.KIMSI_PRELOADED_GUIDES` JS file **outside Git**. From the project root, run:
+
+```sh
+SUNBEAM_PASSWORD='your-private-password' node tools/encrypt-pattern.mjs /path/to/my-guide.json guide-slug
+```
+
+Use `SUNBEAM_REVISION=3` when updating revision 2. The script derives the same browser login key from the public auth configuration, generates a fresh random IV, uses authenticated AES-256-GCM and writes numbered encrypted parts and a loader. It refuses to overwrite existing output parts; remove/backup the previous encrypted slug directory before an intentional update. Add generated `part-XX.js` scripts first, then `loader.js`, to `index.html` and the service worker's `SHELL` list. Increment its cache version.
+
+Do not hardcode the password in this script or upload the original file, shell history, or environment configuration. Be careful with shell commands containing secrets in shared systems.
