@@ -76,7 +76,7 @@
     const input=document.getElementById('unlock-code');
     const feedback=document.getElementById('unlock-error');
     const button=modal.querySelector('[data-action="confirm-unlock-guide"]');
-    const code=(input?.value||'').replace(/\\s+/g,'');
+    const code=(input?.value||'').replace(/\s+/g,'');
     if(!code){if(feedback)feedback.textContent='Please paste your private unlock code.';return}
     if(!window.crypto?.subtle || !window.DecompressionStream){if(feedback)feedback.textContent='A newer browser over HTTPS is needed to unlock this guide.';return}
     if(button)button.disabled=true;
