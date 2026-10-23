@@ -5,7 +5,7 @@ on:
       - '.github/workflows/donut-package.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   package:
     runs-on: ubuntu-latest
@@ -18,6 +18,51 @@ jobs:
           node-version: '22'
       - run: npm install --no-save --no-audit --no-fund sharp
       - run: node tools/rebuild-donut.mjs
+      - name: Update app registry and offline shell
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile,writeFile} from 'node:fs/promises';
+          let tests=await readFile('tests/smoke.test.mjs','utf8');
+          if(!tests.includes('assert.equal(catalog.length,5)')||!tests.includes('assert.equal(catalogue.length,5)')) throw Error('Unexpected test structure');
+          tests=tests.replaceAll('assert.equal(catalog.length,5)','assert.equal(catalog.length,6)')
+            .replaceAll('assert.equal(catalogue.length,5)','assert.equal(catalogue.length,6)');
+          tests+=`
+          test('Donut Kitty has protected guide assets and a separately encrypted cover', () => {
+            const entries=JSON.parse(source('data/pattern-catalog.json'));
+            const donut=entries.find(entry=>entry.id==='thewhimsywhale-donut-kitty');
+            assert.ok(donut && donut.assets.length > 1);
+            assert.ok(donut.assets.every(path=>path.startsWith('data/encrypted/donut/')));
+            assert.match(source(donut.assets.at(-1)),/wrappedSessionKey/);
+            assert.ok(JSON.parse(source('data/encrypted/cover-previews.json')).covers[donut.id].wrappedSessionKey);
+            assert.match(source('service-worker.js'),/config\\/donut-envelope\\.json/);
+          });
+          `;
+          await writeFile('tests/smoke.test.mjs',tests);
+          let worker=await readFile('service-worker.js','utf8');
+          if(!worker.includes('sunbeam-art-offline-v16')||!worker.includes('"./config/auth-config.js"'))throw Error('Unexpected service worker structure');
+          worker=worker.replace('sunbeam-art-offline-v16','sunbeam-art-offline-v17')
+            .replace('"./config/auth-config.js",','"./config/auth-config.js",\n  "./config/donut-envelope.json",');
+          await writeFile('service-worker.js',worker);
+          let readme=await readFile('README.md','utf8');
+          readme=readme.replace('Only the five bundled patterns appear in the app','Six bundled patterns appear in the app');
+          readme=readme.replace('for all five photos','for the original five photos, plus the new Donut Kitty cover');
+          await writeFile('README.md',readme);
+          let guides=await readFile('docs/ADDING_PATTERNS.md','utf8');
+          guides=guides.replace('## Add or upgrade a guide safely','- Donut Kitty (The Whimsy Whale): AES-256-GCM encrypted guide with RSA-OAEP wrapped session key and separately encrypted original cover; ear-method options are preserved.\n\n## Add or upgrade a guide safely');
+          await writeFile('docs/ADDING_PATTERNS.md',guides);
+          NODE
+      - name: Verify guide and smoke tests
+        run: |
+          node --check js/app.js
+          node --test tests/smoke.test.mjs
+      - name: Publish only encrypted guide and app metadata
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/encrypted/donut/ data/encrypted/cover-previews.json data/pattern-catalog.json service-worker.js tests/smoke.test.mjs README.md docs/ADDING_PATTERNS.md
+          git diff --cached --check
+          git commit -m "Publish encrypted Donut Kitty guide and cover"
+          git push origin HEAD:main
       - uses: actions/upload-artifact@v4
         with:
           name: donut-kitty-encrypted
