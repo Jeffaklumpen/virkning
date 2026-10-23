@@ -420,7 +420,7 @@ test('long guides can be scanned in a single overview and wired from guide mode'
   assert.match(app,/case 'back-to-guide':returnToGuide\(\)/);
   assert.match(app,/case 'overview-section'/);
   assert.match(app,/if\(overviewOpen\|\|!activeId/);
-  assert.ok(page.includes('js/overview.js?v=overview-v2'));
+  assert.ok(page.includes('js/overview.js?v=easter-v1'));
   assert.ok(page.includes('css/overview.css?v=overview-v2'));
   assert.ok(page.indexOf('js/overview.js?')<page.indexOf('js/app.js?'));
   assert.ok(worker.includes('./js/overview.js'));
