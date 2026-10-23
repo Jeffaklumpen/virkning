@@ -348,3 +348,13 @@ a{color:#9D671D}
 @media(max-width:400px) {
   .pattern-grid .pattern-thumb { height: auto; }
 }
+
+/* Installed iPad home-screen app: account for the notch and home indicator. */
+@media (display-mode:standalone) {
+  .topbar { padding-top: max(22px, env(safe-area-inset-top)); }
+  .site-footer { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+  .app-shell { padding-bottom: env(safe-area-inset-bottom); }
+}
+@supports (-webkit-touch-callout:none) {
+  button, input, select { -webkit-tap-highlight-color:transparent; }
+}
