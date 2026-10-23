@@ -1,6 +1,6 @@
 /* Sunbeam Art — lean offline shell. Encrypted guides are cached when opened. */
 'use strict';
-const CACHE = 'sunbeam-art-offline-v13';
+const CACHE = 'sunbeam-art-offline-v14';
 const SHELL = [
   "./",
   "./index.html",
@@ -23,7 +23,6 @@ const SHELL = [
   "./assets/sunbeam-icon-180.png",
   "./assets/sunbeam-icon-192.png",
   "./assets/sunbeam-icon-512.png",
-  "./assets/donut-cover.svg",
   "./assets/tooth-cover.svg"
 ];
 self.addEventListener('install', event => {
