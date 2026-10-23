@@ -109,7 +109,10 @@
     const entries=Array.isArray(window.SUNBEAM_ENCRYPTED_GUIDES)?window.SUNBEAM_ENCRYPTED_GUIDES:[];
     const already=await getAllGuides();
     for(const item of entries){
-      if(already.some(g=>g.id===item.id))continue;
+      const installed=already.find(g=>g.id===item.id);
+      // Upgrade an existing guide when its encrypted source is revised.
+      // Completion, current round, and materials are saved separately by pattern ID.
+      if(installed && Number(installed.revision||1)>=Number(item.revision||1))continue;
       if(!window.DecompressionStream)throw Error('This browser version cannot unpack private patterns. Update Safari or Chrome.');
       const zipped=await crypto.subtle.decrypt({
         name:'AES-GCM',iv:base64Bytes(item.iv),
