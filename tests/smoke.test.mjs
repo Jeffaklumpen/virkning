@@ -249,3 +249,33 @@ test('login can display an unloaded pattern catalogue without fetching encrypted
   assert.equal(fetched,1);
   assert.equal(inserted,0);
 });
+
+
+test('original photo sources are prioritized; vector illustration is never substituted', () => {
+  const {window}=sandbox();
+  runInNewContext(source('js/estimates.js'),{window});
+  runInNewContext(source('js/previews.js'),{window,Image:function(){}});
+  runInNewContext(source('js/views.js'),{window});
+  const guide={id:'donut-kitty',title:'Donut Kitty',cover:'assets/donut-cover.svg',
+    coverAsset:'assets/donut-cover.svg',
+    groups:[{id:'body',title:'Body',steps:[{id:'first',title:'First',instruction:'Crochet'}]}],
+    images:{finished:'data:image/jpeg;base64,AAAA'}};
+  assert.equal(window.SunbeamPreviews.source(guide),'data:image/jpeg;base64,AAAA');
+  const markup=window.SunbeamViews.library([{p:guide,pr:{},n:{percent:0},time:'5–9 hours'}],1);
+  assert.match(markup,/data:image\\/jpeg;base64,AAAA/);
+  assert.doesNotMatch(markup,/donut-cover\\.svg/);
+  const metadata={id:'demo',title:'Demo',coverAsset:'assets/tooth-cover.svg'};
+  const noPhoto=window.SunbeamViews.library([{p:metadata,pr:{},n:{percent:0},time:null}],1);
+  assert.match(noPhoto,/Loading photo/);
+  assert.doesNotMatch(noPhoto,/tooth-cover\\.svg|🧶/);
+});
+
+test('Donut Kitty offers an explicit single-guide recovery without erasing progress', () => {
+ const app=source('js/app.js');
+ assert.match(app,/function showDonutRecovery/);
+ assert.match(app,/Donut-Kitty-Kimsi-Guide\\.json/);
+ assert.match(app,/restored\\.id!=='donut-kitty'/);
+ assert.match(app,/persistProgress|loadProgress/);
+ assert.match(app,/void populateRealCoverPhotos/);
+ assert.doesNotMatch(app,/importPrivateGuide|import-guide|guide-import-file/);
+});
