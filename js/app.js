@@ -197,7 +197,7 @@
       const source=await file.text();
       let data;
       if(file.name.toLowerCase().endsWith('.js')){
-        const match=source.match(/^\\s*window\\.KIMSI_PRELOADED_GUIDES\\s*=\\s*([\\s\\S]*?)\\s*;\\s*$/);
+        const match=source.match(/^\s*window\.KIMSI_PRELOADED_GUIDES\s*=\s*([\s\S]*?)\s*;\s*$/);
         if(!match)throw Error('Not a supported private pattern file');
         data=JSON.parse(match[1]);
       }else data=JSON.parse(source);
