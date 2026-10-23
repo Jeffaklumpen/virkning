@@ -322,3 +322,29 @@ a{color:#9D671D}
   .login-subtitle{font-size:14px;margin-bottom:22px}
 }
 @media(prefers-reduced-motion:reduce){.login-bee-image{animation:none}}
+
+/* Pattern garden: always show full pattern-cover artwork without cropping. */
+.pattern-grid .pattern-thumb {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  min-height: 0;
+  background: #fff9ee;
+}
+.pattern-grid .pattern-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  padding: 5px;
+  border-radius: 17px;
+}
+@media(max-width:700px) {
+  .pattern-grid .pattern-thumb {
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+  .pattern-grid .pattern-thumb img { padding: 3px; border-radius: 12px; }
+}
+@media(max-width:400px) {
+  .pattern-grid .pattern-thumb { height: auto; }
+}
