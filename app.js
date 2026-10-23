@@ -113,7 +113,7 @@
       if(!window.DecompressionStream)throw Error('This browser version cannot unpack private patterns. Update Safari or Chrome.');
       const zipped=await crypto.subtle.decrypt({
         name:'AES-GCM',iv:base64Bytes(item.iv),
-        additionalData:new TextEncoder().encode('sunbeam-art-tooth-v1')
+        additionalData:new TextEncoder().encode(item.aad || 'sunbeam-art-tooth-v1')
       },patternKey,base64Bytes(item.ciphertext));
       const json=await new Response(new Blob([zipped]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
       const guide=JSON.parse(json);
