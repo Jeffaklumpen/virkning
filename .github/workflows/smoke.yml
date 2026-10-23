@@ -15,6 +15,7 @@ jobs:
           node-version: '22'
       - run: node --check js/app.js
       - run: node --check js/views.js
+      - run: node --check js/overview.js
       - run: node --check js/guide-loader.js
       - run: node --check tools/encrypt-pattern.mjs
       - run: node --test tests/smoke.test.mjs
