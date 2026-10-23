@@ -183,7 +183,7 @@ test('all included projects have sensible planning estimates', () => {
   const estimate = window.SunbeamEstimates;
   const patterns = [
     'sambrosis-tooth','sweetpeaplush-baby-boba-bunny','huniebeecrafts-baby-appa',
-    'oakandmarlow-brie-mouse','annie-carraway-cute-loaf-cat','donut-kitty'
+    'oakandmarlow-brie-mouse','annie-carraway-cute-loaf-cat'
   ];
   for (const id of patterns) {
     const range = estimate.estimateFor({id}, {variantOption:'solid'});
@@ -257,26 +257,60 @@ test('original photo sources are prioritized; vector illustration is never subst
   runInNewContext(source('js/estimates.js'),{window});
   runInNewContext(source('js/previews.js'),{window,Image:function(){}});
   runInNewContext(source('js/views.js'),{window});
-  const guide={id:'donut-kitty',title:'Donut Kitty',cover:'assets/donut-cover.svg',
-    coverAsset:'assets/donut-cover.svg',
+  const guide={id:'sambrosis-tooth',title:'Little Tooth',cover:'assets/tooth-cover.svg',
+    coverAsset:'assets/tooth-cover.svg',
     groups:[{id:'body',title:'Body',steps:[{id:'first',title:'First',instruction:'Crochet'}]}],
     images:{finished:'data:image/jpeg;base64,AAAA'}};
   assert.equal(window.SunbeamPreviews.source(guide),'data:image/jpeg;base64,AAAA');
   const markup=window.SunbeamViews.library([{p:guide,pr:{},n:{percent:0},time:'5–9 hours'}],1);
   assert.ok(markup.includes('data:image/jpeg;base64,AAAA'));
-  assert.ok(!markup.includes('donut-cover.svg'));
+  assert.ok(!markup.includes('tooth-cover.svg'));
   const metadata={id:'demo',title:'Demo',coverAsset:'assets/tooth-cover.svg'};
   const noPhoto=window.SunbeamViews.library([{p:metadata,pr:{},n:{percent:0},time:null}],1);
   assert.match(noPhoto,/Loading photo/);
   assert.ok(!noPhoto.includes('tooth-cover.svg')&&!noPhoto.includes('🧶'));
 });
 
-test('Donut Kitty offers an explicit single-guide recovery without erasing progress', () => {
- const app=source('js/app.js');
- assert.match(app,/function showDonutRecovery/);
- assert.ok(app.includes('Donut-Kitty-Kimsi-Guide.json'));
- assert.ok(app.includes("restored.id!=='donut-kitty'"));
- assert.match(app,/persistProgress|loadProgress/);
- assert.match(app,/void populateRealCoverPhotos/);
- assert.doesNotMatch(app,/importPrivateGuide|import-guide|guide-import-file/);
+
+test('retired guide is absent from the current app, catalogue, assets and PWA cache', () => {
+  const app=source('js/app.js');
+  const worker=source('service-worker.js');
+  const catalogue=JSON.parse(source('data/pattern-catalog.json'));
+  assert.equal(catalogue.length,5);
+  assert.equal(catalogue.some(entry=>entry.id==='donut-kitty'),false);
+  assert.equal(source('js/estimates.js').includes("'donut-kitty':"),false);
+  assert.equal(worker.includes('donut-cover.svg'),false);
+  assert.equal(app.includes('showDonutRecovery'),false);
+  assert.equal(app.includes('donut-repair-file'),false);
+  assert.ok(app.includes("id!=='donut-kitty'")); // Hide existing local record, don't delete it.
+  for(const path of [
+    'assets/donut-body.svg','assets/donut-color.svg','assets/donut-cover.svg',
+    'assets/donut-ears.svg','assets/donut-face.svg','assets/donut-sprinkles.svg',
+    'assets/donut-tail.svg'
+  ]) assert.equal(existsSync(new URL('../'+path,import.meta.url)),false,path);
+});
+
+test('guide rendering handles materials, ear choice and style choice without a crash', () => {
+  const {window}=sandbox();
+  runInNewContext(source('js/estimates.js'),{window});
+  runInNewContext(source('js/previews.js'),{window,Image:function(){}});
+  runInNewContext(source('js/views.js'),{window});
+  const choices=[
+    {id:'prep-materials',title:'Materials',expected:'yarn and hook'},
+    {id:'ear-choice',title:'Ear method',expected:'Option 2'},
+    {id:'choose-style',title:'Choose a style',expected:'Spotted'}
+  ];
+  const guide={
+    id:'test-project',title:'Test project',
+    groups:[{id:'basics',title:'Getting started',steps:choices}],
+    materials:[{name:'yarn and hook'}],
+    variants:[{id:'solid',title:'Solid'},{id:'spotted',title:'Spotted'}]
+  };
+  const progress={done:{},materials:{0:true},earOption:'2',variantOption:'solid'};
+  const all=choices.map(step=>({...step,groupId:'basics',groupTitle:'Getting started'}));
+  for (const step of all){
+    const html=window.SunbeamViews.guide(guide,progress,'basics',step.id,step,
+      all,{total:3,complete:0,percent:0},all.findIndex(x=>x.id===step.id));
+    assert.ok(html.includes(choices.find(x=>x.id===step.id).expected),step.id);
+  }
 });
