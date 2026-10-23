@@ -173,7 +173,7 @@ test('all included projects have sensible planning estimates', () => {
   for (const id of patterns) {
     const range = estimate.estimateFor({id}, {variantOption:'solid'});
     assert.ok(range && range.min >= 1 && range.max > range.min, id);
-    assert.match(estimate.estimateTime({id}), /^\\d+–\\d+ hours$/);
+    assert.match(estimate.estimateTime({id}), /^[0-9]+–[0-9]+ hours$/);
   }
   assert.equal(estimate.estimateTime({id:'annie-carraway-cute-loaf-cat'}, {variantOption:'solid'}), '2–4 hours');
   assert.equal(estimate.estimateTime({id:'annie-carraway-cute-loaf-cat'}, {variantOption:'spotted'}), '3–5 hours');
