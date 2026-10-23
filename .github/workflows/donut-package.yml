@@ -1,0 +1,28 @@
+name: Package protected Donut Kitty
+on:
+  push:
+    paths:
+      - '.github/workflows/donut-package.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --no-audit --no-fund sharp
+      - run: node tools/rebuild-donut.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: donut-kitty-encrypted
+          path: |
+            data/encrypted/donut/
+            data/encrypted/cover-previews.json
+            data/pattern-catalog.json
+          if-no-files-found: error
