@@ -75,5 +75,21 @@ await writeFile(join(outDir, 'loader.js'), loader, { flag: 'wx' });
 key.fill(0);
 console.log('Encrypted guide:', guide.id, '(revision ' + revision + ')');
 console.log('Wrote', chunks.length, 'ciphertext parts to', outDir);
-console.log('Add the part scripts IN ORDER, followed by loader.js, to index.html and service-worker.js.');
+console.log('The ordered encrypted parts are automatically loaded only when opening the guide.');
 console.log('Never commit the original source pattern or a password.');
+
+/* Register encrypted guides automatically. Neither index.html nor the worker
+   needs a per-guide script list: the service worker caches parts on first use. */
+const catalogPath=resolve('data/pattern-catalog.json');
+const catalog=JSON.parse(await readFile(catalogPath,'utf8'));
+if(!Array.isArray(catalog))throw Error('Invalid public catalogue');
+const assets=[
+  ...chunks.map((_,i)=>'data/encrypted/'+slug+'/part-'+String(i+1).padStart(2,'0')+'.js'),
+  'data/encrypted/'+slug+'/loader.js'
+];
+const metadata={id:guide.id,title:guide.title,designer:guide.designer||'',revision,assets};
+const existing=catalog.findIndex(item=>item.id===guide.id);
+if(existing>=0)catalog[existing]=metadata;
+else catalog.push(metadata);
+await writeFile(catalogPath,JSON.stringify(catalog,null,2)+'\n','utf8');
+console.log('Registered encrypted guide in data/pattern-catalog.json.');

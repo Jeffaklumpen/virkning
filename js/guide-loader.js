@@ -35,7 +35,9 @@
   async function download(entry){
     window.SUNBEAM_ENCRYPTED_GUIDES=[];
     // Requests overlap; execution stays ordered because async=false.
-    await Promise.all(entry.assets.map(path=>appendScript(path,entry.revision)));
+    const results=await Promise.allSettled(entry.assets.map(path=>appendScript(path,entry.revision)));
+    const failed=results.find(result=>result.status==='rejected');
+    if(failed){window.SUNBEAM_ENCRYPTED_GUIDES=[];throw failed.reason;}
     const payload=(window.SUNBEAM_ENCRYPTED_GUIDES||[]).find(item=>
       item.id===entry.id && Number(item.revision||1)>=Number(entry.revision||1));
     window.SUNBEAM_ENCRYPTED_GUIDES=[];
