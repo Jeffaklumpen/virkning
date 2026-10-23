@@ -10,7 +10,7 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `js/views.js` — library, guide and completion HTML templates
 - `js/overview.js` and `css/overview.css` — single-page, scrollable guide overview with sections, step navigation and original images
 - `js/guide-loader.js` — small public catalogue and on-demand encrypted-file loader
-- `js/previews.js` — creates compact on-device cover previews after a pattern opens\n- `data/encrypted/cover-previews.json` — five small AES-GCM encrypted original-photo covers, fetched independently of the guides
+- `js/previews.js` — creates compact on-device cover previews after a pattern opens\n- `data/encrypted/cover-previews.json` — seven small AES-GCM encrypted original-photo covers, fetched independently of the guides
 - `data/pattern-catalog.json` — metadata and ordered assets for all bundled guides
 - `js/storage.js` — encrypted on-device patterns, remembered login and progress
 - `js/crypto.js` — password-derived keys and encrypted pattern decryption
@@ -24,6 +24,7 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `data/encrypted/appa/` — encrypted Baby Appa guide (23 high-resolution ciphertext parts and loader)
 - `data/encrypted/brie/` — encrypted Brie Mouse guide (22 ciphertext parts and loader; 51 steps, 42 original reference images)
 - `data/encrypted/loaf/` — encrypted Cute Loaf Cat pattern (34 parts, 72 steps, 84 reference images, 2 selectable variations)
+- `data/encrypted/easter/` — encrypted Easter Bunny Bundle (bunny, carrot and carrot hat; 43 original PDF-page references and 44 navigable steps)
 - `assets/` — app icons and decorative SVGs
 
 ## Important privacy notes
@@ -60,7 +61,7 @@ Cards in Your Pattern Hive and each pattern header display an approximate range 
 
 ## Fast startup and offline guides
 
-The home screen loads only the small public catalogue, app modules, design assets and a small encrypted cover bundle (approximately 240 KB for the original five photos, plus the new Donut Kitty cover). Encrypted guide payloads (and their full-size photos) are **not** downloaded on app startup. Opening a guide retrieves its encrypted parts once, decrypts that guide only and saves it encrypted in IndexedDB. On the same iPad, it can subsequently open from local storage without another network request. The service worker also caches requested parts for offline access. A new guide requires one online opening before it is available offline.
+The home screen loads only the small public catalogue, app modules, design assets and a small encrypted cover bundle (approximately 320 KB for seven encrypted photo covers). Encrypted guide payloads (and their full-size photos) are **not** downloaded on app startup. Opening a guide retrieves its encrypted parts once, decrypts that guide only and saves it encrypted in IndexedDB. On the same iPad, it can subsequently open from local storage without another network request. The service worker also caches requested parts for offline access. A new guide requires one online opening before it is available offline.
 
 Catalogue cards display real, original-photo cover previews, now shipped as a small separately encrypted bundle. The app decrypts the thumbnails after sign-in, stores them encrypted in IndexedDB and never downloads entire unopened guides just to draw grid photos. Opening a guide still generates and locally stores a preview as a fallback. Purchased images remain inside the protected payload; previews are encrypted locally. Progress percentages from earlier opens are remembered without scanning all saved ciphertext on every launch.
 
@@ -70,10 +71,14 @@ Run `node --test tests/smoke.test.mjs` to check the public catalogue, module dep
 
 The grid displays original photographs rather than illustrated substitutes. After unlocking, it uses encrypted previews from device storage or downloads the lightweight encrypted cover bundle. The first visit can briefly show “Loading photo…” while those photos are decrypted. Full guides are only downloaded when opened.
 
-Removing a guide from the visible library does not delete saved progress or encrypted local records. Six bundled patterns appear in the app; older device data is preserved for safety.
+Removing a guide from the visible library does not delete saved progress or encrypted local records. Seven bundled patterns appear in the app; older device data is preserved for safety.
 
 ## Full pattern overview
 
 Open any guide and tap **Pattern overview** near “Back to patterns”. The app switches to a single long, scrollable overview: all steps in their original order, grouped by section, including instructions, material details, all available reference photos, tips, warnings, and current completion status. The sticky section bar lets you jump to any chapter; **Open this step** returns directly to that step in the normal guide. **Back to guide** returns to the step you were reading. The overview is read-only: it does not mark steps complete or reset progress.
 
 The overview respects the saved ear-method and solid/spotted variant selection, showing exactly the steps visible in the normal guide. Change choices in the regular step-by-step view, then open Overview to see the revised list. Photos are accessed only from the locally decrypted guide and are lazy-loaded in the long overview to reduce initial rendering work. No new unencrypted pattern assets or personal guide content are committed.
+
+## Easter Bunny Bundle
+
+Krochet by Kris’s 43-page Easter Bunny Bundle is one protected guide with separate Carrot, Bunny and Carrot Hat sections, all 43 original pages preserved as zoomable high-resolution references, and full text for each page. It includes a materials checklist, Classic White/Patchwork color selection, and the designer's long/short limb and skinny/big ear instructions. Only ciphertext is committed; the original PDF is not. The estimated 16–26 active hours covers making all three items.

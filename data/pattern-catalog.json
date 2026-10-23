@@ -169,5 +169,25 @@
       "data/encrypted/donut/part-25.js",
       "data/encrypted/donut/loader.js"
     ]
+  },
+  {
+    "id": "krochet-by-kris-easter-bunny-bundle",
+    "title": "Easter Bunny Bundle",
+    "designer": "Krochet by Kris",
+    "revision": 1,
+    "assets": [
+      "data/encrypted/easter/part-01.js",
+      "data/encrypted/easter/part-02.js",
+      "data/encrypted/easter/part-03.js",
+      "data/encrypted/easter/part-04.js",
+      "data/encrypted/easter/part-05.js",
+      "data/encrypted/easter/part-06.js",
+      "data/encrypted/easter/part-07.js",
+      "data/encrypted/easter/part-08.js",
+      "data/encrypted/easter/part-09.js",
+      "data/encrypted/easter/part-10.js",
+      "data/encrypted/easter/part-11.js",
+      "data/encrypted/easter/loader.js"
+    ]
   }
 ]

@@ -1,0 +1,3 @@
+window.SUNBEAM_ENCRYPTED_GUIDES=window.SUNBEAM_ENCRYPTED_GUIDES||[];
+window.SUNBEAM_ENCRYPTED_GUIDES.push({"id":"krochet-by-kris-easter-bunny-bundle","title":"Easter Bunny Bundle","designer":"Krochet by Kris","revision":1,"format":"gzip+aes-256-gcm","keySource":"login","aad":"sunbeam-art-easter-bunny-bundle-v1","iv":"4uTzoNsZoYO/kMF2","ciphertext":window.SUNBEAM_EASTER_PARTS.join("")});
+delete window.SUNBEAM_EASTER_PARTS;

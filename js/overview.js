@@ -14,7 +14,7 @@
       </button>`).join('');
   }
   function specialDetails(p,step,progress) {
-    if(step.id==='prep-materials'&&Array.isArray(p.materials)&&p.materials.length)
+    if((step.id==='prep-materials'||step.id==='easter-p02')&&Array.isArray(p.materials)&&p.materials.length)
       return `<div class="overview-materials"><strong>Materials</strong><div>${p.materials.map((m,i)=>
         `<span class="overview-material">${progress.materials?.[i]?'✓ ':''}${esc(m.name)}${m.detail?` <small>${esc(m.detail)}</small>`:''}</span>`).join('')}</div></div>`;
     if(step.id==='choose-style'&&Array.isArray(p.variants))

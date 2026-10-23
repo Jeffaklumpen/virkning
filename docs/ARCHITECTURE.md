@@ -40,3 +40,7 @@ Public, editorial time ranges are defined in `js/estimates.js` and loaded before
 The initial bundle no longer downloads or decrypts every copyrighted pattern. After successful unlock, catalogue metadata and stored IndexedDB previews populate the grid immediately; the separate small encrypted cover bundle fills any missing previews without fetching unopened guides. `getGuide(id)` reads/decrypts one saved record as needed; `SunbeamGuides.load(entry)` loads only the missing or outdated encrypted source in order. Existing local copies are used when offline, and progress keys do not change. Keep the loader's script serialization, since the legacy tooth payload replaces a shared global registry. No framework or build process is required.
 
 For new guides, run the local encryption utility. It writes the ciphertext and adds its assets to the catalogue automatically. No per-pattern changes to `index.html` or the service worker are needed.
+
+## Easter Bunny Bundle
+
+The single `krochet-by-kris-easter-bunny-bundle` record has an on-demand AES-GCM-encrypted `data/encrypted/easter/` payload. All 43 PDF page images and instructions are encrypted, not public assets. Step `easter-p02` uses the interactive materials checklist and `choose-style` selects the bunny colorway. Other designer options are in their original steps. Never cache or commit decrypted source pages or the PDF.

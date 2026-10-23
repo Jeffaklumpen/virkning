@@ -9,6 +9,7 @@
 - Cute Loaf Cat (Annie Carraway Art): AES-256-GCM encrypted gzip JSON with photo references and color charts in `data/encrypted/loaf/` (34 parts and loader). Supports solid and spotted variants within one guide.
 
 - Donut Kitty (The Whimsy Whale): AES-256-GCM encrypted guide with RSA-OAEP wrapped session key and separately encrypted original cover; ear-method options are preserved.
+- Easter Bunny Bundle (Krochet by Kris): one AES-256-GCM/gzip guide covering Bunny, Carrot and Carrot Hat. Its 43 original PDF pages are protected zoomable WebP references alongside 44 text steps. Source PDF and plaintext stay outside Git.
 
 ## Add or upgrade a guide safely
 
