@@ -265,18 +265,6 @@ a{color:#9D671D}
 .bee-flight-dots::before{left:0}
 .bee-flight-dots::after{right:4px;width:11px;height:11px;top:13px;background:#C9ADDC}
 
-/* Private Tooth unlock UI */
-.pattern-card-locked{border:1.5px solid #e6d2a8;background:#fffcf3}
-.pattern-card-locked .pattern-thumb{background:#fff1cf}
-.pattern-card-locked:hover{border-color:#d5af6c}
-.pattern-private-tag{position:absolute;top:12px;right:12px;padding:7px 12px;border:1px solid #e5c786;border-radius:999px;background:#fff9e8;color:#987034;font-size:11px;font-weight:900;box-shadow:0 3px 12px #896b3515}
-.private-card-action{color:#966b29;font-size:13px;font-weight:900}
-.unlock-label{display:block;font-size:13px;font-weight:900;color:#7f654a;margin:18px 0 7px}
-.unlock-code-field{display:block;width:100%;border:2px solid #e9d5ab;border-radius:13px;background:#fffcf6;color:#503d2e;font-size:15px;padding:14px 15px;outline:0}
-.unlock-code-field:focus{border-color:#d09b43;box-shadow:0 0 0 3px #f9efdc}
-.unlock-error{min-height:21px;margin:8px 0 0;font-size:12px!important;font-weight:850;color:#a74146!important}
-@media(max-width:700px){.pattern-private-tag{top:8px;right:8px;padding:6px 9px;font-size:10px}}
-
 /* Private single-password entrance */
 .sunbeam-login{min-height:min(760px,calc(100vh - 165px));display:grid;place-items:center;padding:20px 0 38px}
 .sunbeam-login-card{

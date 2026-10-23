@@ -121,7 +121,7 @@
       const json=await new Response(new Blob([zipped]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
       const guide=JSON.parse(json);
       if(!validPattern(guide)||guide.id!==item.id)throw Error('Invalid private pattern file');
-      await storeGuide(guide);
+      await storeGuide({...guide,revision:Math.max(Number(guide.revision||1),Number(item.revision||1))});
     }
   }
   async function enterLibrary(loginKey){
@@ -129,12 +129,6 @@
     await loadPrivatePatterns(patternKey);
     // Existing local guides and progress are preserved: neither database is cleared.
     patterns=await getAllGuides();
-    if(Array.isArray(window.KIMSI_PRELOADED_GUIDES)){
-      for(const guide of window.KIMSI_PRELOADED_GUIDES){
-        if(validPattern(guide)&&!patterns.some(p=>p.id===guide.id))await storeGuide(guide);
-      }
-      patterns=await getAllGuides();
-    }
     authKey=loginKey;
     renderLibrary();
   }
@@ -159,7 +153,7 @@
   }
 
   function renderLibrary(){if(!authKey)return renderLogin();activeId=null;activeStep=null;const started=patterns.length?patterns.map(p=>({p,pr:loadProgress(p.id),n:stats(p,loadProgress(p.id))})).sort((a,b)=>(b.pr.updatedAt||'').localeCompare(a.pr.updatedAt||'')):[];
-    el.innerHTML=`<section class="hero"><div class="hero-content"><span class="kicker">a cozy little hive of creativity</span><h1>Hey there, <em>Kimsi!</em> <span class="hero-sun" aria-hidden="true">☀</span></h1><p class="lead">Welcome to your sunny little crochet studio. Tiny handmade friends, lovely patterns and every stitch saved right where you left off.</p><div class="hero-actions">${started.length?`<button class="btn btn-primary" data-action="open" data-id="${esc(started[0].p.id)}">${icon('heart')} Continue crocheting</button>`:''}</div></div><div class="hero-art" aria-hidden="true"><span class="floating-star"></span><div class="illustration"><img class="hero-bee" src="assets/sunbeam-bee.svg" alt="" /></div><span class="bee-flight-dots" aria-hidden="true"></span><span class="floating-heart">♡</span></div></section><div class="section-heading"><div><h2>Your Pattern Hive <span class="sunbeam-section-flower" aria-hidden="true">✿</span></h2><p>A growing garden of lovely little handmade friends.</p></div><span class="count-pill">${patterns.length} pattern${patterns.length===1?'':'s'}</span></div><section class="pattern-grid">${started.map(({p,n})=>`<button class="pattern-card" data-action="open" data-id="${esc(p.id)}"><div class="pattern-thumb">${dataThumb(p)}${n.percent===100?'<span class="pattern-complete-badge">✓ Finished</span>':''}</div><div class="pattern-body"><span class="badge">♡ ${esc(p.difficulty||'Crochet')}</span><h3>${esc(p.title)}</h3><div class="micro">${esc(p.designer||'My pattern')} · ${esc(p.category||'Amigurumi')}</div><div class="pattern-progress"><div class="progress-track"><div class="progress-fill" style="width:${n.percent}%"></div></div></div><div class="pattern-foot"><span class="micro">${n.percent===100?'Yay! All finished ✨':`${n.percent}% complete`}</span><span style="color:#c5849a">${icon('chevron')}</span></div></div></button>`).join('')}${patterns.length ? '' : '<div class="library-empty"><span class="flower">✿</span><strong>A little magic is on its way!</strong><span class="micro">Your crochet patterns will bloom here soon.</span></div>'}</section><p class="small-note" style="margin:23px 4px">✦ Your crochet progress is saved automatically in this browser. It does not sync between devices.</p>`;
+    el.innerHTML=`<section class="hero"><div class="hero-content"><span class="kicker">a cozy little hive of creativity</span><h1>Hey there, <em>Kimsi!</em> <span class="hero-sun" aria-hidden="true">☀</span></h1><p class="lead">Welcome to your sunny little crochet studio. Tiny handmade friends, lovely patterns and every stitch saved right where you left off.</p><div class="hero-actions">${started.length?`<button class="btn btn-primary" data-action="open" data-id="${esc(started[0].p.id)}">${icon('heart')} Continue crocheting</button>`:'' }<button class="btn btn-secondary" data-action="import-guide">＋ Import private pattern</button></div>${patterns.some(p=>p.id==='donut-kitty')?'':'<p class="small-note" style="margin-top:14px">Donut Kitty is not included in the public download. Import your own private guide file to restore it on a new device.</p>'}</div><div class="hero-art" aria-hidden="true"><span class="floating-star"></span><div class="illustration"><img class="hero-bee" src="assets/sunbeam-bee.svg" alt="" /></div><span class="bee-flight-dots" aria-hidden="true"></span><span class="floating-heart">♡</span></div></section><div class="section-heading"><div><h2>Your Pattern Hive <span class="sunbeam-section-flower" aria-hidden="true">✿</span></h2><p>A growing garden of lovely little handmade friends.</p></div><span class="count-pill">${patterns.length} pattern${patterns.length===1?'':'s'}</span></div><section class="pattern-grid">${started.map(({p,n})=>`<button class="pattern-card" data-action="open" data-id="${esc(p.id)}"><div class="pattern-thumb">${dataThumb(p)}${n.percent===100?'<span class="pattern-complete-badge">✓ Finished</span>':''}</div><div class="pattern-body"><span class="badge">♡ ${esc(p.difficulty||'Crochet')}</span><h3>${esc(p.title)}</h3><div class="micro">${esc(p.designer||'My pattern')} · ${esc(p.category||'Amigurumi')}</div><div class="pattern-progress"><div class="progress-track"><div class="progress-fill" style="width:${n.percent}%"></div></div></div><div class="pattern-foot"><span class="micro">${n.percent===100?'Yay! All finished ✨':`${n.percent}% complete`}</span><span style="color:#c5849a">${icon('chevron')}</span></div></div></button>`).join('')}${patterns.length ? '' : '<div class="library-empty"><span class="flower">✿</span><strong>A little magic is on its way!</strong><span class="micro">Your crochet patterns will bloom here soon.</span></div>'}</section><p class="small-note" style="margin:23px 4px">✦ Your crochet progress is saved automatically in this browser. It does not sync between devices.</p>`;
     window.scrollTo({top:0,behavior:'instant'});
   }
   function renderGuide(stepId){const p=getPattern();if(!p)return renderLibrary();const all=stepsFor(p,progress);if(!all.length)return renderLibrary();if(stepId && all.some(s=>s.id===stepId))activeStep=stepId;else if(!activeStep||!all.some(s=>s.id===activeStep))activeStep=progress.lastStep&&all.some(s=>s.id===progress.lastStep)?progress.lastStep:all[0].id;
@@ -196,7 +190,31 @@
   function showDictionary(){const p=getPattern();let dict=p?.dictionary||{sc:'Single crochet (US terms)',inc:'Increase (2 sc in one stitch)',dec:'Decrease (2 stitches joined into 1)',slst:'Slip stitch',ch:'Chain',FO:'Fasten off',BLO:'Back loops only',FLO:'Front loops only',bo:'Bobble stitch',hdc:'Half double crochet',dc:'Double crochet',htr:'Half treble crochet'};showModal(`<div class="dialog-head"><div><span class="kicker">little helper</span><h2>Stitch dictionary ✿</h2></div><button class="x-btn" data-action="close-modal" aria-label="Close">×</button></div><p>Quick reminders for the abbreviations in this pattern (US terminology).</p><div class="dictionary">${Object.entries(dict).map(([k,v])=>`<div class="dict-item"><b>${esc(k)}</b> ${esc(v)}</div>`).join('')}</div><button class="btn btn-primary" data-action="close-modal">Back to crocheting ♡</button>`)}
   function showZoom(key){const p=getPattern(),src=picture(p,key);if(!src)return;modal.innerHTML=`<div class="dialog-backdrop zoom-backdrop" data-action="close-modal"><button class="x-btn" style="position:absolute;right:20px;top:20px" data-action="close-modal" aria-label="Close">×</button><img class="dialog-img" src="${src}" alt="Enlarged crochet reference photograph"></div>`;document.body.style.overflow='hidden';bindModalControls()}
   function resetConfirm(){const p=getPattern();if(!p)return;showModal(`<div class="dialog-head"><div><span class="kicker">fresh beginning?</span><h2>Restart ${esc(p.title)}?</h2></div><button type="button" class="x-btn" data-action="close-modal" aria-label="Close restart dialog">×</button></div><p>All completed-step checkmarks for this pattern will be cleared. This cannot be undone.</p><button type="button" class="btn btn-primary" data-action="confirm-reset">Yes, start again</button><button type="button" class="btn btn-secondary" data-action="close-modal">Keep my progress</button>`)}
-  async function handleAction(button){const action=button.dataset.action;switch(action){case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id);break;case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
+  async function importPrivateGuide(file){
+    if(!authKey||!file)return;
+    if(file.size>20000000){toast('That pattern file is too large.');return}
+    try{
+      const source=await file.text();
+      let data;
+      if(file.name.toLowerCase().endsWith('.js')){
+        const match=source.match(/^\\s*window\\.KIMSI_PRELOADED_GUIDES\\s*=\\s*([\\s\\S]*?)\\s*;\\s*$/);
+        if(!match)throw Error('Not a supported private pattern file');
+        data=JSON.parse(match[1]);
+      }else data=JSON.parse(source);
+      const guides=Array.isArray(data)?data:[data];
+      if(!guides.length||!guides.every(validPattern))throw Error('Invalid private pattern data');
+      for(const guide of guides)await storeGuide({...guide,revision:Number(guide.revision||1)});
+      patterns=await getAllGuides();
+      renderLibrary();
+      toast(guides.length===1?'Your private pattern is ready ♡':guides.length+' private patterns imported ♡');
+    }catch(error){toast('Could not import that guide. Use a supported private .json or .js file.')}
+  }
+  $('#guide-import-file')?.addEventListener('change',async e=>{
+    const files=Array.from(e.target.files||[]);
+    for(const file of files)await importPrivateGuide(file);
+    e.target.value='';
+  });
+  async function handleAction(button){const action=button.dataset.action;switch(action){case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'import-guide':$('#guide-import-file')?.click();break;case 'step':renderGuide(button.dataset.id);break;case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
   document.addEventListener('click',e=>{const t=e.target.closest('[data-action]');if(!t)return; if(t.classList.contains('dialog-backdrop')&&e.target!==t)return; e.preventDefault();handleAction(t)});
   document.addEventListener('change',e=>{const m=e.target.closest('[data-material]');if(m){progress.materials[m.dataset.material]=m.checked;persist();}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();return}if(!activeId||modal.innerHTML||['TEXTAREA','INPUT','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'){e.preventDefault();jump(1)}else if(e.key==='ArrowLeft'){e.preventDefault();jump(-1)}else if(e.key==='Enter' && document.activeElement?.dataset.action==='zoom'){showZoom(document.activeElement.dataset.key)}});
