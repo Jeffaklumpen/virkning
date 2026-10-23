@@ -6,6 +6,7 @@
 - Baby Boba Bunny: AES-256-GCM encrypted gzip JSON split across numbered files in `data/encrypted/bunny/`
 - Baby Appa (Huniebeecrafts): AES-256-GCM encrypted gzip JSON including individual high-resolution reference photos in `data/encrypted/appa/` (23 parts and loader). Includes 62 steps and source color-coded round strips.
 - Brie Mouse (Oak and Marlow): AES-256-GCM encrypted gzip JSON with 42 reference photographs in `data/encrypted/brie/` (22 parts and loader), arranged as 51 steps in 10 groups.
+- Cute Loaf Cat (Annie Carraway Art): AES-256-GCM encrypted gzip JSON with photo references and color charts in `data/encrypted/loaf/` (34 parts and loader). Supports solid and spotted variants within one guide.
 - Donut Kitty: **not bundled** because the previous public asset was unencrypted; existing on-device copies remain available, but manual in-app importing is no longer offered.
 
 ## Add or upgrade a guide safely

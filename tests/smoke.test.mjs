@@ -129,7 +129,9 @@ test('all local scripts/styles are cached and inline JavaScript stays disabled',
     ...Array.from({length:23},(_,i) => 'data/encrypted/appa/part-' + String(i+1).padStart(2,'0') + '.js'),
     'data/encrypted/appa/loader.js',
     ...Array.from({length:22},(_,i) => 'data/encrypted/brie/part-' + String(i+1).padStart(2,'0') + '.js'),
-    'data/encrypted/brie/loader.js'
+    'data/encrypted/brie/loader.js',
+    ...Array.from({length:34},(_,i)=>'data/encrypted/loaf/part-'+String(i+1).padStart(2,'0')+'.js'),
+    'data/encrypted/loaf/loader.js'
   ]) {
     assert.ok(html.includes(file), file + ' missing from HTML');
     assert.ok(sw.includes(file), file + ' missing from cache');
@@ -143,4 +145,18 @@ test('manual private-pattern import interface and handlers are absent', () => {
   const app = source('js/app.js');
   assert.doesNotMatch(html, /guide-import-file/);
   assert.doesNotMatch(app, /importPrivateGuide|import-guide|guide-import-file|Import private pattern/);
+});
+
+
+test('variant-specific steps preserve separate completion', () => {
+ const {window}=sandbox();
+ const guide={id:'cat',title:'Cat',groups:[{id:'both',steps:[{id:'choose'},{id:'solid',variant:'solid'},{id:'spotted',variant:'spotted'}]}]};
+ const rules=window.SunbeamPatterns;
+ assert.deepEqual(rules.stepsFor(guide,{earOption:'2',variantOption:'solid'}).map(x=>x.id),['choose','solid']);
+ assert.deepEqual(rules.stepsFor(guide,{earOption:'2',variantOption:'spotted'}).map(x=>x.id),['choose','spotted']);
+ assert.equal(rules.stats(guide,{earOption:'2',variantOption:'spotted',done:{solid:true}}).complete,0);
+ assert.equal(rules.stats(guide,{earOption:'2',variantOption:'solid',done:{solid:true}}).complete,1);
+});
+test('sign out UI has been removed', () => {
+ assert.doesNotMatch(source('js/app.js'),/data-action="sign-out"|case 'sign-out'|>Log out</);
 });

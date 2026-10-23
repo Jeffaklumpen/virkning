@@ -15,11 +15,11 @@
   }
   function stepsFor(p, state) {
     return p.groups.flatMap(g => g.steps
-      .filter(s => !s.option || String(s.option) === String(state.earOption))
+      .filter(s => (!s.option || String(s.option) === String(state.earOption)) && (!s.variant || String(s.variant) === String(state.variantOption || 'solid')))
       .map(s => ({...s, groupId: g.id, groupTitle: g.title})));
   }
   function groupSteps(p, g, state) {
-    return g.steps.filter(s => !s.option || String(s.option) === String(state.earOption));
+    return g.steps.filter(s => (!s.option || String(s.option) === String(state.earOption)) && (!s.variant || String(s.variant) === String(state.variantOption || 'solid')));
   }
   function stats(p, state) {
     const steps = stepsFor(p, state);

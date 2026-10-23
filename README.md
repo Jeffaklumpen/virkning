@@ -17,11 +17,12 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `data/encrypted/bunny/` — encrypted Baby Boba Bunny (12 high-resolution parts and loader)
 - `data/encrypted/appa/` — encrypted Baby Appa guide (23 high-resolution ciphertext parts and loader)
 - `data/encrypted/brie/` — encrypted Brie Mouse guide (22 ciphertext parts and loader; 51 steps, 42 original reference images)
+- `data/encrypted/loaf/` — encrypted Cute Loaf Cat pattern (34 parts, 72 steps, 84 reference images, 2 selectable variations)
 - `assets/` — app icons and decorative SVGs
 
 ## Important privacy notes
 
-This repository and its static hosting are **public**. The site's client-side password protects the encrypted Little Tooth, Baby Boba Bunny and Baby Appa payloads, but it is **not server authentication**. An attacker can download those ciphertexts and attempt offline password guesses. Use a long, unique password for meaningful protection.
+This repository and its static hosting are **public**. The site's client-side password protects the encrypted Little Tooth, Baby Boba Bunny, Baby Appa, Brie Mouse and Cute Loaf Cat payloads, but it is **not server authentication**. An attacker can download those ciphertexts and attempt offline password guesses. Use a long, unique password for meaningful protection.
 
 The legacy `private-guide.js` contained an **unencrypted purchased Donut Kitty guide**, so it has been removed from the current repository tree and site. **Past Git commits, forks, and third-party caches may still contain the original plaintext.** Deleting a file in a new commit cannot erase Git history. Do not assume this original content is fully private.
 
@@ -42,3 +43,9 @@ Use HTTPS (or a secure local development context). Update `index.html` and the s
 ## Security and maintenance
 
 See [SECURITY.md](SECURITY.md) for threat model, password rotation limitations and incident guidance, and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for module boundaries and deployment checks.
+
+## Cute Loaf Cat variations
+
+The `Cute Loaf Cat Plushies` guide has two selectable options: **Solid Color** and **Spotted**. Individual steps can specify `variant`, and only the currently selected variant appears in navigation. Completion tracking uses unique step IDs, so switching does not delete previous completion. Color underlining from the PDF is preserved in encrypted, enlargable reference-chart images.
+
+The visible **Log out** button has been removed on request; remembered login and invalid-key recovery remain available.

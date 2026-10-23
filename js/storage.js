@@ -7,7 +7,7 @@
   const AUTH_STORE = 'auth';
   let guideKey = null;
   const saveKey = id => 'kimsi-progress:' + id;
-  const baseProgress = () => ({done: {}, materials: {}, earOption: '2', lastStep: null, updatedAt: null});
+  const baseProgress = () => ({done: {}, materials: {}, earOption: '2', variantOption: 'solid', lastStep: null, updatedAt: null});
 
   function loadProgress(id) {
     try { return {...baseProgress(), ...JSON.parse(localStorage.getItem(saveKey(id)) || '{}')}; }

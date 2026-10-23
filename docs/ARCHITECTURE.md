@@ -22,3 +22,7 @@ Do not change existing guide IDs. Completion entries are stored in localStorage 
 3. Run `node --check` on JS files and check CSS brackets/syntax.
 4. Test first login, remembered login, logout, image zoom and progress persistence in Safari.
 5. Test installed iPad PWA online and offline. A CSP must permit local data: images and hosted Google Fonts.
+
+## Selectable pattern variants
+
+`variants` on a pattern enumerates options, and optional `variant` on each step selects which instructions are shown. `SunbeamPatterns.stepsFor` and `groupSteps` filter by `progress.variantOption` in addition to the existing ear option. `choose-style` renders style selectors. Shared steps omit `variant`; switching never removes progress saved under the existing pattern ID.
