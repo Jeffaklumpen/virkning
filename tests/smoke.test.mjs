@@ -119,6 +119,11 @@ test('guide encryption, legacy migration, progress and sign-out preserve data sa
   store.setGuideKey(null);
   await assert.rejects(store.getAllGuides());
   assert.equal(store.loadProgress('test-guide').done.first, true);
+  store.setGuideKey(key);
+  const image='data:image/webp;base64,AAAA';
+  await store.storePreview('test-guide',image);
+  assert.equal((await store.getPreviews())['test-guide'],image);
+  assert.ok(indexedDB.records('sunbeam-art-previews-v1','previews').get('test-guide').ciphertext);
 });
 
 test('fast shell, on-demand encrypted assets and catalogue match', () => {
@@ -130,7 +135,7 @@ test('fast shell, on-demand encrypted assets and catalogue match', () => {
   assert.doesNotMatch(html,/<script\s*>/i);
   assert.match(source('manifest.webmanifest'),/"display": "standalone"/);
   for(const file of ['js/app.js','js/storage.js','js/crypto.js','js/patterns.js',
-    'js/estimates.js','js/guide-loader.js','js/views.js','js/pwa.js',
+    'js/estimates.js','js/guide-loader.js','js/views.js','js/previews.js','js/pwa.js',
     'css/base.css','css/components.css','css/theme.css','data/pattern-catalog.json']) {
     assert.ok(html.includes(file)||file.endsWith('.json'),file+' missing from HTML');
     assert.ok(sw.includes(file),file+' missing from offline shell');
@@ -216,6 +221,8 @@ test('library presentation works with catalogue entries before decrypting guides
   assert.match(html,/Baby Appa/);
   assert.match(html,/12–18 hours/);
   assert.match(html,/pattern-thumb-placeholder/);
+  const previewHtml=window.SunbeamViews.library([{p:{...meta,preview:'data:image/webp;base64,AAAA'},pr:{},n:{percent:0},time:null}],1);
+  assert.ok(previewHtml.includes('data:image/webp;base64,AAAA'));
   const guide={...meta,groups:[{id:'body',title:'Body',steps:[{id:'first',title:'First',instruction:'Single crochet'}]}]};
   const state={done:{},materials:{},earOption:'2',variantOption:'solid'};
   const markup=window.SunbeamViews.guide(guide,state,'body','first',

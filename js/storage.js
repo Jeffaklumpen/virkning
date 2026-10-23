@@ -157,8 +157,54 @@
  if(!record.ciphertext) await storeGuide(guide);
  return guide;
 }
+
+  const PREVIEW_DB='sunbeam-art-previews-v1';
+  const PREVIEW_STORE='previews';
+  function previewsDbOpen(){return openDb(PREVIEW_DB,PREVIEW_STORE,'id')}
+  async function storePreview(id,image){
+    requireGuideKey();
+    if(typeof id!=='string'||!/^[a-z0-9-]{2,80}$/.test(id)||
+      typeof image!=='string'||!/^data:image\/(jpeg|png|webp);base64,/i.test(image))
+      throw Error('Invalid pattern preview');
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext=await crypto.subtle.encrypt({
+      name:'AES-GCM',iv,
+      additionalData:new TextEncoder().encode('sunbeam-preview:'+id)
+    },requireGuideKey(),new TextEncoder().encode(image));
+    const db=await previewsDbOpen();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(PREVIEW_STORE,'readwrite');
+      tx.objectStore(PREVIEW_STORE).put({id,iv:toBase64(iv),ciphertext:toBase64(new Uint8Array(ciphertext))});
+      tx.oncomplete=()=>{db.close();resolve()};
+      tx.onerror=()=>{db.close();reject(tx.error)};
+    });
+  }
+  async function getPreviews(){
+    requireGuideKey();
+    const db=await previewsDbOpen();
+    const records=await new Promise((resolve,reject)=>{
+      const tx=db.transaction(PREVIEW_STORE,'readonly');
+      const request=tx.objectStore(PREVIEW_STORE).getAll();
+      request.onsuccess=()=>resolve(request.result||[]);
+      request.onerror=()=>reject(request.error);
+      tx.oncomplete=()=>db.close();
+      tx.onerror=()=>db.close();
+    });
+    const previews={};
+    for(const record of records){
+      try{
+        const plain=await crypto.subtle.decrypt({
+          name:'AES-GCM',iv:fromBase64(record.iv),
+          additionalData:new TextEncoder().encode('sunbeam-preview:'+record.id)
+        },requireGuideKey(),fromBase64(record.ciphertext));
+        const image=new TextDecoder().decode(plain);
+        if(/^data:image\/(jpeg|png|webp);base64,/i.test(image))previews[record.id]=image;
+      }catch{/* Ignore broken previews without affecting the actual guide. */}
+    }
+    return previews;
+  }
   window.SunbeamStorage = Object.freeze({
     saveKey, baseProgress, loadProgress, persistProgress,
-    setGuideKey, getAllGuides, storeGuide, getGuide, listStoredIds, savedAuthKey, rememberAuthKey, forgetAuthKey
+    setGuideKey, getAllGuides, storeGuide, getGuide, listStoredIds, storePreview, getPreviews, savedAuthKey, rememberAuthKey, forgetAuthKey
   });
 })();
