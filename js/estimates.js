@@ -13,8 +13,7 @@
     'annie-carraway-cute-loaf-cat': {
       solid: {min: 2, max: 4},
       spotted: {min: 3, max: 5}
-    },
-    'donut-kitty': {min: 5, max: 9}
+    }
   });
 
   function estimateFor(pattern, progress = {}) {

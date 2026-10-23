@@ -31,12 +31,9 @@
   setGuideKey(key);
   const [entries,localIds,previews]=await Promise.all([window.SunbeamGuides.catalog(),listStoredIds(),getPreviews().catch(()=>({}))]);
   const known=new Set(entries.map(e=>e.id));
-  const local=[...new Set([...localIds.filter(id=>!known.has(id)),'donut-kitty'])]
-    .filter(id=>!known.has(id)).map(id=>({
-      id,title:id==='donut-kitty'?'Donut Kitty':id.replace(/-/g,' '),
-      designer:id==='donut-kitty'?'The Whimsy Whale':'My pattern',
-      localOnly:true
-    }));
+  // Hide the retired pattern without touching IndexedDB records or saved progress.
+  const local=localIds.filter(id=>id!=='donut-kitty'&&!known.has(id))
+    .map(id=>({id,title:id.replace(/-/g,' '),designer:'My pattern',localOnly:true}));
   patterns=[...entries,...local];
   loadedPatterns=new Map();
   previewImages=new Map(Object.entries(previews));
@@ -103,7 +100,7 @@
     let guide=null;
     try { guide=await getGuide(entry.id) } catch(error) {
       // Older on-device copies can be corrupt after a legacy encryption upgrade.
-      // Bundled guides can be re-downloaded; a local-only Donut needs recovery.
+      // Bundled guides can be re-downloaded without changing progress.
       if(!entry.assets)throw error;
     }
     if(entry.assets&&(!guide||Number(guide.revision||1)<Number(entry.revision||1))){
@@ -116,11 +113,6 @@
       }catch(error){if(!guide)throw error}
     }
     if(!validPattern(guide))throw Error('Guide not found on this device');
-    if(entry.id==='donut-kitty'){
-      const photoCount=Object.values(guide.images||{})
-        .filter(window.SunbeamPreviews.isPhoto).length;
-      if(photoCount<20)throw Error('Donut Kitty requires its original photo guide');
-    }
     return guide;
   }
 
@@ -154,48 +146,9 @@
         if(run!==photoSweepId)return;
         await saveRealPhotoPreview(entry.id,guide);
       }catch(error){
-        // Donut Kitty can only be repaired from its existing local original or
-        // from the user's own JSON export. Never resurrect public plaintext.
+        // Unavailable covers must never block opening other guides.
       }
     }
-  }
-
-  function showDonutRecovery(){
-    activeId=null;
-    el.innerHTML=`<section class="sunbeam-login" aria-label="Restore Donut Kitty">
-      <div class="sunbeam-login-card">
-        <h1>Restore <em>Donut Kitty</em></h1>
-        <p class="login-subtitle">The older copy on this iPad is missing or cannot be opened.
-          Choose your original <strong>Donut-Kitty-Kimsi-Guide.json</strong> file once
-          to restore the pattern with its real photographs. Your completed steps remain saved.</p>
-        <input type="file" id="donut-repair-file" accept=".json,application/json">
-        <p class="login-error" id="donut-repair-error" role="alert"></p>
-        <button type="button" class="btn btn-secondary" data-action="home">Back to patterns</button>
-      </div>
-    </section>`;
-    const input=el.querySelector('#donut-repair-file');
-    input?.addEventListener('change',async()=>{
-      const file=input.files?.[0];
-      if(!file)return;
-      const status=el.querySelector('#donut-repair-error');
-      try{
-        if(file.size>25000000)throw Error('The selected file is too large.');
-        const json=JSON.parse(await file.text());
-        const restored=json?.pattern||json;
-        if(!validPattern(restored)||restored.id!=='donut-kitty'||
-          Object.values(restored.images||{}).filter(window.SunbeamPreviews.isPhoto).length<20)
-          throw Error('Select the original Donut Kitty JSON guide with photographs.');
-        const guide={...restored,revision:Math.max(Number(restored.revision||1),2)};
-        await storeGuide(guide);
-        loadedPatterns.set(guide.id,guide);
-        await saveRealPhotoPreview(guide.id,guide).catch(()=>null);
-        activeId=guide.id;progress=loadProgress(activeId);
-        renderGuide();
-        toast('Donut Kitty restored with original photos ♡');
-      }catch(error){
-        if(status)status.textContent=error.message||'Could not restore this guide.';
-      }
-    });
   }
 
   async function openPattern(id){
@@ -214,7 +167,6 @@
       void saveRealPhotoPreview(id,guide).catch(()=>{});
     }catch(error){
       if(token!==loadingToken)return;
-      if(id==='donut-kitty')return showDonutRecovery();
       renderLibrary();
       toast('Could not open this guide. Check your connection or saved offline copy.');
     }
