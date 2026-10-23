@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="theme-color" content="#FFFAF2" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -43,14 +44,11 @@
   <script src="data/encrypted/bunny/part-12.js?v=2" defer></script>
   <script src="data/encrypted/bunny/loader.js?v=2" defer></script>
   <script src="config/auth-config.js?v=kimsi-password-v2" defer></script>
-  <script src="js/app.js?v=organized-v1" defer></script>
+  <script src="js/storage.js?v=refactor-v1" defer></script>
+  <script src="js/crypto.js?v=refactor-v1" defer></script>
+  <script src="js/patterns.js?v=refactor-v1" defer></script>
+  <script src="js/app.js?v=refactor-v1" defer></script>
+  <script src="js/pwa.js?v=refactor-v1" defer></script>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js', {scope: './'}).catch(() => {});
-      });
-    }
-  </script>
 </body>
 </html>
