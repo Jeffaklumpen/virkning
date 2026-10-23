@@ -135,7 +135,7 @@ test('fast shell, on-demand encrypted assets and catalogue match', () => {
   assert.doesNotMatch(html,/<script\s*>/i);
   assert.match(source('manifest.webmanifest'),/"display": "standalone"/);
   for(const file of ['js/app.js','js/storage.js','js/crypto.js','js/patterns.js',
-    'js/estimates.js','js/guide-loader.js','js/views.js','js/previews.js','js/pwa.js',
+    'js/estimates.js','js/guide-loader.js','js/views.js','js/overview.js','js/previews.js','js/pwa.js',
     'css/base.css','css/components.css','css/theme.css','data/pattern-catalog.json']) {
     assert.ok(html.includes(file)||file.endsWith('.json'),file+' missing from HTML');
     assert.ok(sw.includes(file),file+' missing from offline shell');
@@ -313,4 +313,118 @@ test('guide rendering handles materials, ear choice and style choice without a c
       all,{total:3,complete:0,percent:0},all.findIndex(x=>x.id===step.id));
     assert.ok(html.includes(choices.find(x=>x.id===step.id).expected),step.id);
   }
+});
+
+
+test('overview displays every selected step and keeps progress unchanged', () => {
+  const {window}=sandbox();
+  runInNewContext(source('js/estimates.js'),{window});
+  runInNewContext(source('js/previews.js'),{window,Image:function(){}});
+  runInNewContext(source('js/overview.js'),{window});
+  const state={done:{first:true,solid:true},earOption:'2',variantOption:'solid'};
+  const guide={
+    id:'annie-carraway-cute-loaf-cat',title:'Cute Loaf Cat Plushies',
+    designer:'Annie Carraway Art',images:{
+      cover:'data:image/jpeg;base64,AAAA',main:'data:image/png;base64,BBBB',
+      side:'data:image/jpeg;base64,CCCC'
+    },cover:'cover',variants:[{id:'solid',title:'Solid Color'},{id:'spotted',title:'Spotted'}],
+    groups:[
+      {id:'setup',title:'Getting started',steps:[
+        {id:'first',title:'Prepare materials',instruction:'Prepare your yarn.',image:'main',images:['main','side'],tip:'Use the correct hook.'},
+        {id:'solid',title:'Solid body',instruction:'Crochet solid.',variant:'solid',raw:'6sc',count:6},
+        {id:'spotted',title:'Spotted body',instruction:'Crochet spotted.',variant:'spotted'}]},
+      {id:'final',title:'Finish',steps:[{id:'end',title:'Last stitches',instruction:'Finish off.',warning:'Do not overfill.'}]}
+    ]
+  };
+  const before=JSON.stringify(state);
+  const html=window.SunbeamOverview.render(guide,state,'solid');
+  assert.equal(JSON.stringify(state),before,'Overview should never change completion or selected option');
+  assert.match(html,/Pattern overview/);
+  assert.match(html,/Getting started/);
+  assert.match(html,/Last stitches/);
+  assert.match(html,/Crochet solid\./);
+  assert.doesNotMatch(html,/Crochet spotted\./);
+  assert.match(html,/2\/3/);
+  assert.match(html,/67%/);
+  assert.match(html,/Style: Solid Color/);
+  assert.match(html,/data-action="overview-section" data-id="setup"/);
+  assert.match(html,/id="overview-group-setup"/);
+  assert.match(html,/data-action="step" data-id="solid"/);
+  assert.match(html,/data-action="back-to-guide"/);
+  assert.match(html,/data-action="zoom" data-key="side"/);
+  assert.equal((html.match(/data-action="zoom" data-key="main"/g)||[]).length,1,'Duplicate step photo should not be repeated');
+  assert.match(html,/loading="lazy" decoding="async"/);
+  assert.match(html,/Do not overfill/);
+  assert.match(html,/6sc/);
+  assert.match(html,/6 stitches/);
+  assert.match(html,/✓ Done/);
+  state.variantOption='spotted';
+  const alternative=window.SunbeamOverview.render(guide,state,'first');
+  assert.match(alternative,/Crochet spotted\./);
+  assert.doesNotMatch(alternative,/Crochet solid\./);
+  assert.match(alternative,/Style: Spotted/);
+});
+
+test('overview renders options and materials while escaping unsafe pattern text', () => {
+  const {window}=sandbox();
+  runInNewContext(source('js/estimates.js'),{window});
+  runInNewContext(source('js/previews.js'),{window,Image:function(){}});
+  runInNewContext(source('js/overview.js'),{window});
+  const guide={
+    id:'example',title:'My <strong>project</strong>',
+    images:{},materials:[{name:'Soft yarn',detail:'Size 6'}],
+    variants:[{id:'solid',title:'Solid'},{id:'spotted',title:'Spotted'}],
+    groups:[{id:'first',title:'First section',steps:[
+      {id:'prep-materials',title:'Materials',instruction:'Gather <script>alert(1)</script>'},
+      {id:'choose-style',title:'Choose a style',instruction:'Choose your style.'},
+      {id:'ear-choice',title:'Ear options',instruction:'Choose ear placement.'},
+      {id:'hidden-ear',title:'For option 1',instruction:'Hidden',option:'1'},
+      {id:'selected-ear',title:'For option 2',instruction:'Visible',option:'2'}
+    ]}]
+  };
+  const progress={done:{},materials:{0:true},earOption:'2',variantOption:'spotted'};
+  const markup=window.SunbeamOverview.render(guide,progress,'prep-materials');
+  assert.match(markup,/Soft yarn/);
+  assert.match(markup,/Size 6/);
+  assert.match(markup,/Spotted/);
+  assert.match(markup,/Ears: Option 2/);
+  assert.match(markup,/Current ear method:/);
+  assert.match(markup,/Visible/);
+  assert.doesNotMatch(markup,/Hidden/);
+  assert.match(markup,/My &lt;strong&gt;project&lt;\/strong&gt;/);
+  assert.match(markup,/&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.doesNotMatch(markup,/<script>alert/);
+});
+
+test('long guides can be scanned in a single overview and wired from guide mode', () => {
+  const {window}=sandbox();
+  runInNewContext(source('js/estimates.js'),{window});
+  runInNewContext(source('js/previews.js'),{window,Image:function(){}});
+  runInNewContext(source('js/overview.js'),{window});
+  const groups=Array.from({length:9},(_,g)=>({
+    id:'group-'+g,title:'Section '+(g+1),
+    steps:Array.from({length:8},(_,s)=>({id:'step-'+g+'-'+s,title:'Row '+(g*8+s+1),
+      instruction:'Complete row '+(g*8+s+1)+'.'}))
+  }));
+  const html=window.SunbeamOverview.render({id:'big-guide',title:'Big guide',groups}, {done:{}}, 'step-0-0');
+  assert.equal((html.match(/class="overview-step /g)||[]).length,72);
+  assert.equal((html.match(/class="overview-section"/g)||[]).length,9);
+  assert.match(html,/Complete row 72\./);
+  const app=source('js/app.js');
+  const view=source('js/views.js');
+  const page=source('index.html');
+  const worker=source('service-worker.js');
+  assert.match(view,/data-action="overview"/);
+  assert.match(app,/function renderOverview\(\)/);
+  assert.match(app,/case 'overview':renderOverview\(\)/);
+  assert.match(app,/case 'back-to-guide':returnToGuide\(\)/);
+  assert.match(app,/case 'overview-section'/);
+  assert.match(app,/if\(overviewOpen\|\|!activeId/);
+  assert.ok(page.includes('js/overview.js?v=overview-v1'));
+  assert.ok(page.includes('css/overview.css?v=overview-v1'));
+  assert.ok(page.indexOf('js/overview.js?')<page.indexOf('js/app.js?'));
+  assert.ok(worker.includes('./js/overview.js'));
+  assert.ok(worker.includes('./css/overview.css'));
+  assert.match(source('css/overview.css'),/@media\(max-width:700px\)/);
+  assert.match(source('css/overview.css'),/position:sticky/);
 });
