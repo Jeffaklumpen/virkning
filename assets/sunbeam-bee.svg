@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="title desc">
+  <title id="title">Sunbeam Art's little bee</title>
+  <desc id="desc">A happy golden bee with heart-shaped wings, rosy cheeks and tiny antennae.</desc>
+  <defs>
+    <clipPath id="bee-body-clip"><ellipse cx="120" cy="133" rx="66" ry="64"/></clipPath>
+    <linearGradient id="bee-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFEAA2"/><stop offset=".58" stop-color="#F9CC59"/><stop offset="1" stop-color="#F0AB39"/></linearGradient>
+    <linearGradient id="bee-wing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFDF8"/><stop offset="1" stop-color="#E4E6FC"/></linearGradient>
+  </defs>
+  <g fill="none" stroke="#695043" stroke-width="5.5" stroke-linecap="round">
+    <path d="M99 67c-3-16-13-23-19-28"/>
+    <path d="M141 67c3-16 13-23 19-28"/>
+  </g>
+  <circle cx="77" cy="37" r="7.5" fill="#7B5545"/>
+  <circle cx="163" cy="37" r="7.5" fill="#7B5545"/>
+  <path d="M112 99C83 34 34 40 42 90c4 27 31 37 70 25Z" fill="url(#bee-wing)" stroke="#8F8190" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M127 99c29-65 78-59 70-9-4 27-31 37-70 25Z" fill="url(#bee-wing)" stroke="#8F8190" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M77 80c6-13 15-16 23-14M163 80c-6-13-15-16-23-14" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+  <path d="M61 166c-14 7-16 17-12 23M179 166c14 7 16 17 12 23" stroke="#745445" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <ellipse cx="120" cy="133" rx="66" ry="64" fill="url(#bee-gold)" stroke="#654B3D" stroke-width="6"/>
+  <g clip-path="url(#bee-body-clip)" fill="none" stroke="#79513A" stroke-width="14" stroke-linecap="round">
+    <path d="M54 149c44 23 88 22 132 0"/>
+    <path d="M64 176c37 18 75 20 112 0"/>
+  </g>
+  <ellipse cx="120" cy="133" rx="66" ry="64" fill="none" stroke="#654B3D" stroke-width="6"/>
+  <ellipse cx="87" cy="127" rx="11" ry="7" fill="#F79AA5" opacity=".8"/>
+  <ellipse cx="153" cy="127" rx="11" ry="7" fill="#F79AA5" opacity=".8"/>
+  <ellipse cx="100" cy="112" rx="5" ry="7.5" fill="#49392F"/>
+  <ellipse cx="140" cy="112" rx="5" ry="7.5" fill="#49392F"/>
+  <circle cx="102" cy="110" r="1.9" fill="#fff"/>
+  <circle cx="142" cy="110" r="1.9" fill="#fff"/>
+  <path d="M113 128q7 9 14 0" fill="none" stroke="#49392F" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M95 189c-3 11-1 16 4 19M145 189c3 11 1 16-4 19" fill="none" stroke="#705042" stroke-width="5" stroke-linecap="round"/>
+  <path d="m26 118 3 8 8 3-8 3-3 8-3-8-8-3 8-3ZM204 143l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="#E7B44F"/>
+</svg>
