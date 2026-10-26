@@ -188,11 +188,15 @@ test('Supabase login replaces the old pattern-only login and sign-out is accessi
  assert.match(app,/cloud\.readKeyring\(\)/);
  assert.match(app,/if\(!envelope\)\{/);
  assert.match(app,/await keyring\.unlock\(envelope,password,member\.user_id\)/);
- assert.match(app,/cloud\.requireFreshLogin\(\)/);
+ assert.match(app,/await cloud\.restore\(\)/);
+ assert.match(app,/await savedLibraryUnlock\(member\.user_id\)/);
+ assert.match(app,/await rememberLibraryUnlock\(member\.user_id,legacyKey\)/);
+ assert.match(app,/await forgetLibraryUnlock\(userId\)/);
  assert.match(app,/await forgetAuthKey\(\)/);
  assert.doesNotMatch(app,/savedAuthKey\(\)|rememberAuthKey\(/);
+ assert.match(cloud,/async function restore\(\)/);
  assert.match(cloud,/localStorage\.removeItem\(STORE\)/);
- assert.doesNotMatch(cloud,/localStorage\.setItem\(STORE/);
+ assert.match(cloud,/localStorage\.setItem\(STORE/);
 });
 
 
@@ -826,8 +830,14 @@ test('pattern notes are personal, safely rendered, and included in synced progre
   assert.doesNotMatch(guide,/<script>alert\(1\)<\/script>/);
   assert.match(guide,/My pattern notes/);
   assert.match(guide,/maxlength="5000"/);
-  assert.match(source('js/app.js'),/addEventListener\('input'/);
-  assert.match(source('js/app.js'),/progress\.notes=value;persist\(\)/);
+  const app=source('js/app.js');
+  assert.match(guide,/id="pattern-notes-save"/);
+  assert.match(guide,/data-action="save-pattern-notes"/);
+  assert.match(app,/case 'save-pattern-notes':savePatternNotes\(\)/);
+  assert.match(app,/function savePatternNotes\(\)/);
+  assert.match(app,/progress\.notes=value;\s*persist\(\)/);
+  assert.match(app,/noteDrafts\.set\(activeId,value\)/);
+  assert.doesNotMatch(app,/progress\.notes=value;persist\(\);updateNotesStatus\(\)/);
   assert.match(source('js/storage.js'),/notes: ''/);
 
   store.markProgressSynced(id,local.dirty);
@@ -840,4 +850,75 @@ test('the upper-right decorative sparkle is removed without touching the bee', (
   const css=source('css/theme.css');
   assert.match(css,/\.hero::before\s*\{\s*content:none;\s*display:none/);
   assert.match(css,/\.hero-bee\s*\{/);
+});
+
+
+test('restorable refresh tokens are scoped to the approved Supabase user',async()=>{
+ const {window,localStorage}=sandbox();
+ const uid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ const requests=[];
+ const fetcher=async(url,opts={})=>{
+   requests.push(url);
+   if(url.includes('grant_type=password'))
+     return {ok:true,status:200,json:async()=>({user:{id:uid,email:'kimsi@test.example'},
+       access_token:'access-one',refresh_token:'refresh-one',expires_in:3600})};
+   if(url.includes('grant_type=refresh_token')){
+     assert.equal(JSON.parse(opts.body).refresh_token,'refresh-one');
+     return {ok:true,status:200,json:async()=>({user:{id:uid,email:'kimsi@test.example'},
+       access_token:'access-two',refresh_token:'refresh-two',expires_in:3600})};
+   }
+   if(url.includes('sunbeam_members'))
+     return {ok:true,status:200,json:async()=>[{
+       user_id:uid,enabled:true,role:'owner',display_name:'Kimsi'
+     }]};
+   if(url.includes('/auth/v1/logout'))return {ok:true,status:204};
+   throw Error('Unexpected URL: '+url);
+ };
+ window.SUNBEAM_SUPABASE_CONFIG={url:'https://test.supabase.co',publishableKey:'sb_publishable_example'};
+ window.addEventListener=()=>{};
+ function initCloud(){
+   runInNewContext(source('js/cloud.js'),{
+     window,localStorage,fetch:fetcher,
+     document:{dispatchEvent:()=>{}},Event:class{},
+     navigator:{onLine:true},setTimeout,clearTimeout,
+     Date,Math,JSON,Number,Map,Set,Error,encodeURIComponent
+   });
+   return window.SunbeamCloud;
+ }
+ let client=initCloud();
+ await client.login('kimsi@test.example','test-password');
+ const stored=JSON.parse(localStorage.getItem('sunbeam-cloud-session-v1'));
+ assert.equal(stored.user_id,uid);
+ assert.equal(stored.refresh_token,'refresh-one');
+ assert.doesNotMatch(JSON.stringify(stored),/test-password|access-one/);
+ client=initCloud();
+ const member=await client.restore();
+ assert.equal(member.user_id,uid);
+ assert.equal(client.state().connected,true);
+ assert.equal(JSON.parse(localStorage.getItem('sunbeam-cloud-session-v1')).refresh_token,'refresh-two');
+ assert.equal(requests.filter(url=>url.includes('sunbeam_members')).length,2);
+ await client.disconnect();
+ assert.equal(localStorage.getItem('sunbeam-cloud-session-v1'),null);
+});
+
+test('device remembers only a non-extractable private key for the logged in account',async()=>{
+ const {window}=sandbox(),storage=window.SunbeamStorage;
+ const user='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ const other='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+ const key=await webcrypto.subtle.importKey('raw',
+   webcrypto.getRandomValues(new Uint8Array(32)),'AES-GCM',false,['decrypt']);
+ await storage.rememberLibraryUnlock(user,key);
+ assert.equal(await storage.savedLibraryUnlock(user),key);
+ assert.equal(await storage.savedLibraryUnlock(other),null);
+ await storage.forgetLibraryUnlock(user);
+ assert.equal(await storage.savedLibraryUnlock(user),null);
+});
+
+test('unsaved note editing has no persistence side effects',()=>{
+ const s=source('js/app.js'),start=s.indexOf("document.addEventListener('input',event=>"),
+ end=s.indexOf("document.addEventListener('change',e=>",start);
+ assert.ok(start>0&&end>start);
+ const changes=s.slice(start,end);
+ assert.match(changes,/noteDrafts\.set\(activeId,value\)/);
+ assert.doesNotMatch(changes,/persist\(\)|persistProgress\(|cloud\.schedule\(/);
 });
