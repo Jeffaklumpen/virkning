@@ -20,6 +20,16 @@
     if(activeId && cloud.state().connected)cloud.schedule(activeId);
   }
   function getPattern(){return loadedPatterns.get(activeId)}
+  function updateNotesStatus(){
+    const status=el.querySelector('#pattern-notes-save-status');
+    if(!status||!activeId)return;
+    const dirty=window.SunbeamStorage.getProgressRecord(activeId).dirty;
+    const sync=cloud.state().status;
+    status.textContent=dirty
+      ? (sync==='offline'||sync==='error'?'Saved on device · Will sync later':'Saving to cloud…')
+      : (sync==='synced'?'Saved to cloud ✓':'Saved on this device');
+  }
+  document.addEventListener('sunbeam-cloud-status',updateNotesStatus);
   function toast(message){document.querySelector('.toast')?.remove();const n=document.createElement('div');n.className='toast';n.textContent=message;document.body.append(n);setTimeout(()=>n.remove(),2900)}
 
   // An approved Supabase account and its own existing encrypted keyring
@@ -47,13 +57,11 @@
       .map(id=>({id,title:id.replace(/-/g,' '),designer:'My pattern',localOnly:true}));
     patterns=[...entries,...local];loadedPatterns=new Map();
     previewImages=new Map(Object.entries(previews));patternKey=key;authKey=loginKey;
+    // Pull remote progress before showing any guide: stale local state must
+    // never be written over an existing cloud note at first login.
+    await cloud.syncAll(patterns.map(p=>p.id));
+    if(!cloud.state().connected)throw Error('Your session has ended.');
     renderLibrary();void populateEncryptedCoverPhotos();
-    void cloud.syncAll(patterns.map(p=>p.id)).then(()=>{
-      if(!authKey||!cloud.state().connected)return;
-      if(activeId&&loadedPatterns.has(activeId)){
-        const step=activeStep;progress=loadProgress(activeId);renderGuide(step,'back');
-      }else if(!activeId)renderLibrary();
-    });
   }
   async function signInWithAccount(){
     const email=el.querySelector('#sunbeam-email')?.value.trim();
@@ -117,6 +125,7 @@
   swapView(el,window.SunbeamViews.guide(p,progress,activeGroup,activeStep,step,all,st,idx),'guide',{
     direction,afterMount:()=>{
       document.getElementById('chapter-select')?.addEventListener('change',e=>jumpGroup(e.target.value));
+      updateNotesStatus();
     }
   });
 }
@@ -274,6 +283,14 @@
   function resetConfirm(){const p=getPattern();if(!p)return;showModal(`<div class="dialog-head"><div><span class="kicker">fresh beginning?</span><h2>Restart ${esc(p.title)}?</h2></div><button type="button" class="x-btn" data-action="close-modal" aria-label="Close restart dialog">×</button></div><p>All completed-step checkmarks for this pattern will be cleared. This cannot be undone.</p><button type="button" class="btn btn-primary" data-action="confirm-reset">Yes, start again</button><button type="button" class="btn btn-secondary" data-action="close-modal">Keep my progress</button>`)}
   async function handleAction(button){const action=button.dataset.action;switch(action){case 'sign-out':void signOut();break;case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id,overviewOpen?'back':'forward');break;case 'overview':renderOverview();break;case 'overview-top':if(overviewOpen)window.scrollTo({top:0,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;case 'back-to-guide':returnToGuide();break;case 'overview-section':{if(!overviewOpen)break;const section=document.getElementById('overview-group-'+button.dataset.id);section?.scrollIntoView({behavior:'smooth',block:'start'});break}case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
   document.addEventListener('click',e=>{const t=e.target.closest('[data-action]');if(!t)return; if(t.classList.contains('dialog-backdrop')&&e.target!==t)return; e.preventDefault();handleAction(t)});
+  // Keep typing smooth on iPad. Save in local storage on every edit, while
+  // the existing cloud sync uploads after a short pause in typing.
+  document.addEventListener('input',event=>{
+    if(event.target?.id!=='pattern-notes-input'||!activeId||!authKey)return;
+    const value=event.target.value.slice(0,5000);
+    if(progress.notes===value)return;
+    progress.notes=value;persist();updateNotesStatus();
+  });
   document.addEventListener('change',e=>{const m=e.target.closest('[data-material]');if(m){progress.materials[m.dataset.material]=m.checked;persist();}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modal.innerHTML){closeModal();return}if(overviewOpen){returnToGuide();return}closeModal();return}if(overviewOpen||!activeId||modal.innerHTML||['TEXTAREA','INPUT','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'){e.preventDefault();jump(1)}else if(e.key==='ArrowLeft'){e.preventDefault();jump(-1)}else if(e.key==='Enter' && document.activeElement?.dataset.action==='zoom'){showZoom(document.activeElement.dataset.key)}});
   $('#home-btn').addEventListener('click',()=>authKey?renderLibrary():renderLogin());

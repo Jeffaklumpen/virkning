@@ -518,8 +518,8 @@ test('overview back-to-top button is accessible, scroll-aware and works on iPad'
   assert.match(css,/\.overview-to-top\[hidden\]\{display:none\}/);
   assert.match(css,/safe-area-inset-bottom/);
   assert.match(css,/@media\(max-width:700px\)/);
-  assert.match(source('index.html'),/js\/app.js\?v=single-login-v3/);
-  assert.match(source('service-worker.js'),/sunbeam-art-offline-v28/);
+  assert.match(source('index.html'),/js\/app.js\?v=pattern-notes-v1/);
+  assert.match(source('service-worker.js'),/sunbeam-art-offline-v29/);
 });
 
 test('screen transitions preserve immediate rendering and guide-step controls', () => {
@@ -793,4 +793,51 @@ test('approved account encryption migration safely wraps the old guide key', asy
  await window.SunbeamCrypto.unwrapPrivatePatternKey(unlocked);
  await assert.rejects(escrow.unlock(original.envelope,'wrong-account-password',uuid));
  await assert.rejects(escrow.unlock(original.envelope,accountPassword,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'));
+});
+
+
+test('pattern notes are personal, safely rendered, and included in synced progress', () => {
+  const {window}=sandbox();
+  const store=window.SunbeamStorage;
+  const account='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',other='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const id='sambrosis-tooth';
+  store.setProgressUser(account,false);
+  const notes='Yarn: cotton, hook 4 mm\nChanged ears\n</textarea><script>alert(1)</script>';
+  const progress={...store.baseProgress(),done:{first:true},materials:{wool:true},notes};
+  store.persistProgress(id,progress);
+  const local=store.getProgressRecord(id);
+  assert.equal(local.progress.notes,notes);
+  assert.equal(local.progress.done.first,true);
+  assert.equal(local.progress.materials.wool,true);
+  assert.ok(local.dirty.startsWith('local:'));
+  assert.equal(JSON.parse(JSON.stringify(local.progress)).notes,notes,
+    'a note must be part of the same JSON object uploaded to Supabase');
+
+  runInNewContext(source('js/estimates.js'),{window});
+  runInNewContext(source('js/previews.js'),{window,Image:function(){}});
+  runInNewContext(source('js/views.js'),{window});
+  const step={id:'first',title:'First step',groupTitle:'Body',groupId:'body',instruction:'Crochet'};
+  const pattern={id,title:'Little Tooth',designer:'Example',groups:[{id:'body',title:'Body',steps:[step]}]};
+  const guide=window.SunbeamViews.guide(pattern,store.loadProgress(id),'body','first',step,
+    [step],{total:1,complete:1,percent:100},0);
+  assert.match(guide,/id="pattern-notes-input"/);
+  assert.match(guide,/Yarn: cotton, hook 4 mm/);
+  assert.match(guide,/&lt;\/textarea&gt;/);
+  assert.doesNotMatch(guide,/<script>alert\(1\)<\/script>/);
+  assert.match(guide,/My pattern notes/);
+  assert.match(guide,/maxlength="5000"/);
+  assert.match(source('js/app.js'),/addEventListener\('input'/);
+  assert.match(source('js/app.js'),/progress\.notes=value;persist\(\)/);
+  assert.match(source('js/storage.js'),/notes: ''/);
+
+  store.markProgressSynced(id,local.dirty);
+  assert.equal(store.getProgressRecord(id).dirty,null);
+  store.setProgressUser(other,false);
+  assert.equal(store.loadProgress(id).notes,'','notes must not leak into a second account');
+});
+
+test('the upper-right decorative sparkle is removed without touching the bee', () => {
+  const css=source('css/theme.css');
+  assert.match(css,/\.hero::before\s*\{\s*content:none;\s*display:none/);
+  assert.match(css,/\.hero-bee\s*\{/);
 });

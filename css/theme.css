@@ -123,12 +123,8 @@ a {
 }
 
 .hero::before {
-  content:'✳';
-  font-size:102px;
-  color:#F3DA9B;
-  right:28px;
-  top:-49px;
-  opacity:.58
+  content:none;
+  display:none
 }
 
 .hero::after {
@@ -1126,3 +1122,60 @@ a {
 #sunbeam-setup-submit {width:100%;min-height:55px;font-size:15px}
 .setup-sign-out {margin:14px auto 0}
 .sunbeam-login-card .login-error {white-space:normal}
+
+/* Notes for the entire pattern, collapsed to keep the steps distraction-free. */
+.pattern-notes {
+  border:1px solid #eeddbf; border-radius:22px;
+  background:linear-gradient(112deg,#fffdf8,#fff8ea);
+  box-shadow:0 8px 28px rgba(123,85,39,.045); margin:0 0 24px; overflow:hidden
+}
+.pattern-notes-summary {
+  list-style:none; display:flex; align-items:center; gap:14px;
+  padding:18px 21px; cursor:pointer; user-select:none;
+  -webkit-tap-highlight-color:transparent
+}
+.pattern-notes-summary::-webkit-details-marker {display:none}
+.pattern-notes-summary:focus-visible {outline:3px solid #ba852f;outline-offset:-4px}
+.pattern-notes-badge {
+  width:43px;height:43px;border-radius:14px;flex:none;
+  background:#fff0c9;color:#b88228;display:grid;place-items:center;
+  font-size:23px;font-weight:800
+}
+.pattern-notes-heading {min-width:0;display:flex;flex-direction:column;gap:4px;flex:1}
+.pattern-notes-heading strong {font-size:16px;color:#59422e;font-weight:900}
+.pattern-notes-heading small {
+  font-size:13px;color:#9a8065;line-height:1.4;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.pattern-notes-count {
+  background:#fff0d3;color:#946926;border:1px solid #f2e0b8;
+  padding:6px 10px;border-radius:999px;white-space:nowrap;
+  font-size:12px;font-weight:850
+}
+.pattern-notes-chevron {font-size:26px;line-height:1;color:#b78b4b;transition:transform .2s ease}
+.pattern-notes[open] .pattern-notes-chevron {transform:rotate(180deg)}
+.pattern-notes-content {border-top:1px solid #f1e5d1;padding:20px 22px 19px}
+.pattern-notes-content label {display:block;font-size:13px;font-weight:850;color:#71543b;margin:0 0 10px}
+#pattern-notes-input {
+  display:block;width:100%;min-height:110px;resize:vertical;
+  border:1.5px solid #e8d7b7;border-radius:14px;padding:14px 15px;
+  background:#fffefa;color:#503e30;font-size:15px;line-height:1.65;
+  font-family:inherit;box-sizing:border-box
+}
+#pattern-notes-input:focus {border-color:#d4a14a;outline:3px solid #f8e9c7;outline-offset:1px}
+#pattern-notes-input::placeholder {color:#af9b82}
+.pattern-notes-footer {display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 1px 0}
+.pattern-notes-help,.pattern-notes-save-status {font-size:12px;line-height:1.5;color:#9c886c}
+.pattern-notes-save-status {font-weight:850;color:#66826b;text-align:right}
+.pattern-has-note {font-size:12px;color:#ad7d35;font-weight:850;margin:8px 0 0}
+@media(max-width:680px){
+  .pattern-notes {border-radius:18px;margin-bottom:18px}
+  .pattern-notes-summary {padding:14px;gap:10px}
+  .pattern-notes-badge {width:38px;height:38px;font-size:21px}
+  .pattern-notes-count {font-size:11px;padding:5px 8px}
+  .pattern-notes-heading strong {font-size:14px}
+  .pattern-notes-heading small {font-size:12px}
+  .pattern-notes-content {padding:14px}
+  #pattern-notes-input {font-size:16px}
+}
+@media(prefers-reduced-motion:reduce){.pattern-notes-chevron {transition:none}}
