@@ -935,3 +935,11 @@ test('new PDF import is attached to the existing private Sunbeam guide renderer'
   assert.match(html,/https:\/\/cdnjs\.cloudflare\.com/);
   assert.match(sw,/sunbeam-art-offline-v30/);
 });
+
+
+test('private custom guide metadata is never recovered from another account local cache', () => {
+ const app=source('js/app.js');
+ assert.match(app,/!custom\.validId\(id\)/);
+ assert.match(app,/custom\.list\(\)/);
+ assert.match(app,/custom\.load\(entry\.id\)/);
+});
