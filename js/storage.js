@@ -248,6 +248,8 @@
     if(id.startsWith('my-'))localStorage.removeItem(saveKey(id));
   }
   async function removeCachedPattern(id){
+    // Clear the device's notes and progress even if IndexedDB is unavailable.
+    clearLocalProgress(id);
     // Remove AES-GCM-encrypted offline guide AND any preview thumbnail.
     await Promise.all([
       (async()=>{
@@ -269,7 +271,6 @@
         });
       })()
     ]);
-    clearLocalProgress(id);
   }
   window.SunbeamStorage = Object.freeze({
     saveKey, baseProgress, loadProgress, persistProgress,
