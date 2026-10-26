@@ -4,6 +4,8 @@
   'use strict';
   const config=window.SUNBEAM_SUPABASE_CONFIG;
   const STORE='sunbeam-cloud-session-v1';
+  // v2 is intentionally session-only. All previous remembered sessions expire
+  // on opening the new login screen; previous pattern unlocks are not reused.
   let session=null,member=null,restoreJob=null,refreshJob=null,knownIds=[];
   let syncStatus='local';
   const pending=new Map(),running=new Set();
@@ -11,13 +13,12 @@
   const dispatch=()=>document.dispatchEvent(new Event('sunbeam-cloud-status'));
   const setStatus=value=>{syncStatus=value;dispatch()};
   function state(){
-    return {connected:!!member,userId:member?.user_id||'',
-      name:member?.display_name||'',email:session?.user?.email||'',role:member?.role||'',
-      status:syncStatus};
+    return {connected:!!member,userId:member?.user_id||'',name:member?.display_name||'',
+      email:session?.user?.email||'',role:member?.role||'',status:syncStatus};
   }
   function cacheSession(){
-    if(session&&member)localStorage.setItem(STORE,JSON.stringify({session,member}));
-    else localStorage.removeItem(STORE);
+    // Do not persist Supabase refresh tokens; email/password is required anew.
+    localStorage.removeItem(STORE);
   }
   function reset(){
     session=null;member=null;restoreJob=null;refreshJob=null;
@@ -81,30 +82,27 @@
       method:'POST',body:{email:email.trim(),password}});
     answer.expires_at=Math.floor(Date.now()/1000)+Number(answer.expires_in||3600);
     const approved=await verifyMembership(answer);
-    session=answer;member=approved;restoreJob=Promise.resolve(member);
+    session=answer;member=approved;
     cacheSession();setStatus('connecting');
     return member;
   }
-  function restore(){
-    if(restoreJob)return restoreJob;
-    restoreJob=(async()=>{
-      let saved=null;
-      try{saved=JSON.parse(localStorage.getItem(STORE)||'null')}catch{}
-      if(!saved?.session?.user?.id||!saved?.member?.user_id)return null;
-      session=saved.session;
-      try{
-        const token=await accessToken();
-        member=await verifyMembership({...session,access_token:token});
-        cacheSession();setStatus('connecting');
-        return member;
-      }catch(error){
-        if(!navigator.onLine && saved.member.user_id===saved.session.user.id){
-          member=saved.member;setStatus('offline');return member;
-        }
-        reset();return null;
-      }
-    })();
-    return restoreJob;
+  function requireFreshLogin(){
+    // Force out old cached Supabase sessions and obsolete migration state.
+    localStorage.removeItem(STORE);
+    reset();
+  }
+  async function readKeyring(){
+    if(!member)throw Error('Sign in first.');
+    const rows=await request('/rest/v1/sunbeam_keyrings?select=envelope&user_id=eq.'+
+      encodeURIComponent(session.user.id)+'&limit=1');
+    return rows?.[0]?.envelope||null;
+  }
+  async function saveKeyring(envelope){
+    if(!member)throw Error('Sign in first.');
+    return request('/rest/v1/sunbeam_keyrings?on_conflict=user_id',{
+      method:'POST',prefer:'resolution=merge-duplicates,return=minimal',
+      emptyResponse:true,body:{user_id:session.user.id,envelope}
+    });
   }
   async function disconnect(){
     // Invalidate the server session where possible, then lock this browser.
@@ -172,5 +170,5 @@
   window.addEventListener('online',()=>{
     if(member&&knownIds.length)void syncAll(knownIds);
   });
-  window.SunbeamCloud=Object.freeze({state,login,restore,disconnect,syncAll,schedule});
+  window.SunbeamCloud=Object.freeze({state,login,requireFreshLogin,readKeyring,saveKeyring,disconnect,syncAll,schedule});
 })();
