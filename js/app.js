@@ -7,14 +7,13 @@
   let patterns=[], loadedPatterns=new Map(), activeId=null, activeStep=null, activeGroup=null, progress={}, authKey=null, patternKey=null, loadingToken=0, previewImages=new Map(), photoSweepId=0, overviewOpen=false;
   const {esc, icon, picture, validPattern, stepsFor, groupSteps, stats} = window.SunbeamPatterns;
   const {baseProgress, loadProgress, persistProgress, setGuideKey,
-    getGuide, listStoredIds, storeGuide, storePreview, getPreviews, savedAuthKey, rememberAuthKey, forgetAuthKey,
+    getGuide, listStoredIds, storeGuide, storePreview, getPreviews, forgetAuthKey,
     setProgressUser} = window.SunbeamStorage;
-  const {derivePasswordKey, unwrapPrivatePatternKey, decryptGuide} = window.SunbeamCrypto;
+  const {unwrapPrivatePatternKey, decryptGuide} = window.SunbeamCrypto;
   const {estimateTime} = window.SunbeamEstimates;
   const {render: swapView} = window.SunbeamMotion;
   const cloud=window.SunbeamCloud;
   const keyring=window.SunbeamKeyring;
-  let pendingMember=null, pendingAccountPassword=null;
   function persist() {
     progress.updatedAt = new Date().toISOString();
     persistProgress(activeId, progress);
@@ -23,20 +22,13 @@
   function getPattern(){return loadedPatterns.get(activeId)}
   function toast(message){document.querySelector('.toast')?.remove();const n=document.createElement('div');n.className='toast';n.textContent=message;document.body.append(n);setTimeout(()=>n.remove(),2900)}
 
-  // Only an approved Supabase account can enter; the older password is used
-  // for a one-time encrypted key migration, never as a login bypass.
+  // An approved Supabase account and its own existing encrypted keyring
+  // are the only login requirements. The old pattern password is never asked.
   function renderLogin(message=''){
     activeId=null;activeStep=null;overviewOpen=false;
     swapView(el,window.SunbeamViews.login(message),'login',{afterMount:()=>{
       el.querySelector('#sunbeam-login-form')?.addEventListener('submit',event=>{
         event.preventDefault();void signInWithAccount();
-      });
-    }});
-  }
-  function renderSetup(){
-    swapView(el,window.SunbeamViews.setup(),'login',{afterMount:()=>{
-      el.querySelector('#sunbeam-setup-form')?.addEventListener('submit',event=>{
-        event.preventDefault();void finishSetup();
       });
     }});
   }
@@ -77,8 +69,7 @@
       const envelope=await cloud.readKeyring();
       field.value='';
       if(!envelope){
-        pendingMember=member;pendingAccountPassword=password;
-        renderSetup();return;
+        throw Error('Your private pattern library is not linked to this account. Please contact the administrator.');
       }
       const legacyKey=await keyring.unlock(envelope,password,member.user_id);
       await enterLibrary(legacyKey,member);
@@ -90,37 +81,9 @@
       field?.focus();
     }
   }
-  async function finishSetup(){
-    if(!pendingMember||!pendingAccountPassword||!cloud.state().connected){
-      renderLogin('Please sign in again to continue setup.');return;
-    }
-    const field=el.querySelector('#sunbeam-legacy-password');
-    const oldPassword=field?.value||'';
-    const message=el.querySelector('#sunbeam-setup-error');
-    const submit=el.querySelector('#sunbeam-setup-submit');
-    if(!oldPassword)return;
-    if(submit){submit.disabled=true;submit.textContent='Securing your library…'}
-    if(message)message.textContent='';
-    try{
-      const {envelope,legacyKey}=await keyring.enroll(
-        pendingAccountPassword,oldPassword,pendingMember.user_id);
-      field.value='';
-      await cloud.saveKeyring(envelope);
-      await enterLibrary(legacyKey,pendingMember);
-      pendingAccountPassword=null;pendingMember=null;
-      toast('Your private library is ready ♡');
-    }catch(error){
-      if(message)message.textContent=error?.name==='OperationError'?
-        'The previous pattern password was not correct. Please try again.':
-        (error?.message||'Could not finish setup. Please try again.');
-      if(submit){submit.disabled=false;submit.textContent='Finish secure setup ♡'}
-      field?.focus();
-    }
-  }
   async function signOut(){
     ++loadingToken;++photoSweepId;closeModal();
     await cloud.disconnect();
-    pendingMember=null;pendingAccountPassword=null;
     setProgressUser(null);setGuideKey(null);
     patternKey=null;authKey=null;patterns=[];progress={};
     loadedPatterns.clear();previewImages.clear();

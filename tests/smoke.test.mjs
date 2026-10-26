@@ -179,12 +179,15 @@ test('Supabase login replaces the old pattern-only login and sign-out is accessi
  const app=source('js/app.js'),views=source('js/views.js'),cloud=source('js/cloud.js');
  assert.match(views,/id="sunbeam-email"/);
  assert.match(views,/id="sunbeam-password"/);
- assert.match(views,/id="sunbeam-setup-form"/);
+ assert.doesNotMatch(views,/sunbeam-setup-form|sunbeam-legacy-password|Finish secure setup/);
+ assert.doesNotMatch(app,/renderSetup\(|finishSetup\(|pendingAccountPassword|pendingMember|keyring\.enroll\(/);
  assert.match(views,/data-action="sign-out"/);
  assert.doesNotMatch(views,/Connect cloud backup|cloud-strip/);
  assert.match(app,/case 'sign-out':void signOut/);
  assert.match(app,/cloud\.login\(email,password\)/);
  assert.match(app,/cloud\.readKeyring\(\)/);
+ assert.match(app,/if\(!envelope\)\{/);
+ assert.match(app,/await keyring\.unlock\(envelope,password,member\.user_id\)/);
  assert.match(app,/cloud\.requireFreshLogin\(\)/);
  assert.match(app,/await forgetAuthKey\(\)/);
  assert.doesNotMatch(app,/savedAuthKey\(\)|rememberAuthKey\(/);
@@ -515,8 +518,8 @@ test('overview back-to-top button is accessible, scroll-aware and works on iPad'
   assert.match(css,/\.overview-to-top\[hidden\]\{display:none\}/);
   assert.match(css,/safe-area-inset-bottom/);
   assert.match(css,/@media\(max-width:700px\)/);
-  assert.match(source('index.html'),/js\/app.js\?v=private-auth-v2/);
-  assert.match(source('service-worker.js'),/sunbeam-art-offline-v27/);
+  assert.match(source('index.html'),/js\/app.js\?v=single-login-v3/);
+  assert.match(source('service-worker.js'),/sunbeam-art-offline-v28/);
 });
 
 test('screen transitions preserve immediate rendering and guide-step controls', () => {
@@ -586,7 +589,7 @@ test('all screens load accessible lightweight motion assets without changing pri
   assert.match(css,/::view-transition-old\(sunbeam-page\)/);
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/\.dialog-backdrop/);
-  assert.match(sw,/sunbeam-art-offline-v27/);
+  assert.match(sw,/sunbeam-art-offline-v28/);
   assert.match(sw,/\.\/js\/motion\.js/);
   assert.match(sw,/\.\/css\/motion\.css/);
 });
