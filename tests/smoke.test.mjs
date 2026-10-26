@@ -518,8 +518,8 @@ test('overview back-to-top button is accessible, scroll-aware and works on iPad'
   assert.match(css,/\.overview-to-top\[hidden\]\{display:none\}/);
   assert.match(css,/safe-area-inset-bottom/);
   assert.match(css,/@media\(max-width:700px\)/);
-  assert.match(source('index.html'),/js\/app.js\?v=pdf-import-v1/);
-  assert.match(source('service-worker.js'),/sunbeam-art-offline-v30/);
+  assert.match(source('index.html'),/js\/app.js\?v=editor-upgrade-v2/);
+  assert.match(source('service-worker.js'),/sunbeam-art-offline-v31/);
 });
 
 test('screen transitions preserve immediate rendering and guide-step controls', () => {
@@ -589,7 +589,7 @@ test('all screens load accessible lightweight motion assets without changing pri
   assert.match(css,/::view-transition-old\(sunbeam-page\)/);
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/\.dialog-backdrop/);
-  assert.match(sw,/sunbeam-art-offline-v30/);
+  assert.match(sw,/sunbeam-art-offline-v31/);
   assert.match(sw,/\.\/js\/motion\.js/);
   assert.match(sw,/\.\/css\/motion\.css/);
 });
@@ -933,7 +933,7 @@ test('new PDF import is attached to the existing private Sunbeam guide renderer'
     assert.ok(sw.includes(path),'new asset is cached in offline shell: '+path);
   }
   assert.match(html,/https:\/\/cdnjs\.cloudflare\.com/);
-  assert.match(sw,/sunbeam-art-offline-v30/);
+  assert.match(sw,/sunbeam-art-offline-v31/);
 });
 
 
@@ -942,4 +942,107 @@ test('private custom guide metadata is never recovered from another account loca
  assert.match(app,/!custom\.validId\(id\)/);
  assert.match(app,/custom\.list\(\)/);
  assert.match(app,/custom\.load\(entry\.id\)/);
+});
+
+
+test('PDF editor opens both image types in a keyboard and touch friendly zoom viewer',()=>{
+  const editor=source('js/pdf-import.js');
+  const css=source('css/pdf-import.css');
+  assert.match(editor,/class="import-image-preview-trigger import-step-preview"/);
+  assert.match(editor,/class="import-image-preview-trigger import-cover-trigger"/);
+  assert.match(editor,/data-import-action="preview"/);
+  assert.match(editor,/function openImagePreview\(key\)/);
+  assert.match(editor,/function applyPreviewZoom\(level\)/);
+  assert.match(editor,/data-preview="prev"/);
+  assert.match(editor,/data-preview="next"/);
+  assert.match(editor,/data-preview="in"/);
+  assert.match(editor,/data-preview="out"/);
+  assert.match(editor,/e\.key==='Escape'/);
+  assert.match(editor,/closeImagePreview\(\)/);
+  assert.match(css,/\.import-preview-backdrop/);
+  assert.match(css,/touch-action:pan-x pan-y/);
+});
+
+test('PDF crop rerenders the original page at high resolution and does not upscale',()=>{
+  const code=source('js/pdf-import.js');
+  assert.match(code,/let pdfDocument=null,highQualityPages=new Map\(\)/);
+  assert.match(code,/pdfDocument=doc/);
+  assert.match(code,/await sourceForImage\(imageKey\)/);
+  assert.match(code,/page\.render\(\{canvasContext:ctx,viewport\}\)/);
+  assert.match(code,/Math\.sqrt\(7000000/);
+  assert.match(code,/Math\.min\(1,2400\/Math\.max\(sourceWidth,sourceHeight\)\)/);
+  assert.match(code,/toDataURL\('image\/webp',\.94\)/);
+  assert.match(code,/oldDoc\.destroy\(\)/);
+  assert.match(code,/previewOverlay\.remove\(\)/);
+});
+
+test('deleting imported patterns removes all photos, progress, and guide record',async()=>{
+  const {window}=sandbox();
+  const user='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const id='my-11111111-2222-3333-4444-555555555555';
+  const folder=user+'/'+id+'/';
+  const steps=[],store=[];
+  let filesDeleted=false,guideDeleted=false,progressDeleted=false,blocked=false;
+  window.SunbeamCloud={
+    state:()=>({connected:true,userId:user}),
+    blockPatternSync:async id=>{steps.push('block:'+id);blocked=true},
+    authenticatedFetch:async(path,options={})=>{
+      const method=options.method||'GET';
+      steps.push(method+' '+path);
+      if(path.includes('/storage/v1/object/list/')){
+        return {json:async()=>filesDeleted?[]:[
+          {name:'cover-older.webp'},{name:'crop-previous.webp'}]};
+      }
+      if(method==='DELETE'&&path.includes('/storage/v1/object/sunbeam-pattern-images')){
+        assert.equal(blocked,true);
+        const payload=JSON.parse(options.body);
+        assert.deepEqual([...payload.prefixes].sort(),[
+          folder+'cover-older.webp',folder+'crop-previous.webp',
+          folder+'extra-unlisted.webp'].sort());
+        filesDeleted=true;
+        return {json:async()=>({})};
+      }
+      if(method==='DELETE'&&path.includes('sunbeam_progress')){
+        assert.equal(filesDeleted,true);
+        progressDeleted=true;
+        return {json:async()=>({})};
+      }
+      if(method==='DELETE'&&path.includes('sunbeam_custom_patterns')){
+        assert.equal(progressDeleted,true);
+        guideDeleted=true;
+        return {json:async()=>({})};
+      }
+      if(path.includes('sunbeam_custom_patterns')){
+        return {json:async()=>guideDeleted?[]:[{
+          id,payload:{imagePaths:{extra:folder+'extra-unlisted.webp'}}
+        }]};
+      }
+      throw Error('Unexpected request '+path);
+    }
+  };
+  runInNewContext(source('js/custom-patterns.js'),{
+    window,crypto:webcrypto,atob,Uint8Array,FileReader:function(){}
+  });
+  const response=await window.SunbeamCustomPatterns.remove(id);
+  assert.equal(response.removed,true);
+  assert.equal(response.imagesRemoved,3);
+  assert.equal(guideDeleted,true);
+  assert.equal(progressDeleted,true);
+  assert.equal(filesDeleted,true);
+  assert.ok(steps.some(step=>step.includes('sunbeam_progress?user_id=eq.')));
+  assert.ok(steps.some(step=>step.includes('sunbeam_custom_patterns?user_id=eq.')));
+});
+
+test('delete actions are only offered for imported patterns and require confirmation',()=>{
+  const views=source('js/views.js'),app=source('js/app.js'),storage=source('js/storage.js'),cloud=source('js/cloud.js');
+  assert.match(views,/p\.custom\?.*pattern-card-delete/);
+  assert.match(views,/p\.custom\?.*delete-guide-button/);
+  assert.match(app,/case 'delete-custom':confirmDeletePattern/);
+  assert.match(app,/case 'confirm-delete-custom':void deletePersonalPattern/);
+  assert.match(app,/This cannot be undone/);
+  assert.match(app,/await custom\.remove\(id\)/);
+  assert.match(app,/await removeCachedPattern\(id\)/);
+  assert.match(storage,/clearLocalProgress\(id\)/);
+  assert.match(storage,/async function removeCachedPattern\(id\)/);
+  assert.match(cloud,/async function blockPatternSync\(id\)/);
 });

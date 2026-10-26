@@ -36,3 +36,17 @@
 ## Validation
 
 Run `node --test tests/smoke.test.mjs` and confirm GitHub Actions + Pages deployment. Test with at least one actual crochet PDF with a text layer and one scanned page in Safari on iPad (pointer/touch crop, reorder, save, reopen, edit from another device). No original PDF should appear in Supabase Storage, requests, or user-scoped database rows.
+
+## Image preview and quality improvement
+
+During editing, tap either the chosen step image or the cover to open a full-screen preview. Use the left/right controls to compare all page images, the + / − buttons to zoom, and Close or Escape to return without losing changes. This works with touch on iPad.
+
+The standard draft thumbnails are intentionally small to avoid loading dozens of heavy pages on iPad. **When viewing or cropping an imported PDF page, the editor now renders that page afresh from the PDF.js in-memory document, up to approximately 7 megapixels**, then exports selected crops at WebP quality 0.94 with no artificial upscaling. The PDF is destroyed when the user saves/cancels; it is never uploaded or stored.
+
+Previously imported guides can only use the WebP images that were already saved, so those existing blurry images cannot be reconstructed without reimporting the original PDF.
+
+## Permanently deleting imported guides
+
+Use **Delete pattern** from the personal pattern card or the guide header. Confirmation is required. The removal process blocks pending progress uploads, lists all stored images from the private guide folder (including previous edit versions), deletes these images through the Supabase Storage API, deletes that pattern's progress/notes from `sunbeam_progress`, and deletes the guide JSON from `sunbeam_custom_patterns`. The app also clears its local encrypted guide, thumbnail and progress.
+
+The bundled twelve private guides cannot be deleted via this feature. Supabase RLS continues to ensure that each user can only delete their own imports. Progress inserts and updates are now conditional on the associated custom guide still existing, protecting against stale sessions recreating deleted progress.

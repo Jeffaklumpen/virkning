@@ -118,13 +118,58 @@
     return {...payload,images:Object.fromEntries([...used]
       .filter(key=>draft.images?.[key]).map(key=>[key,draft.images[key]]))};
   }
+  async function listStoredPhotos(user,id){
+    const prefix=user+'/'+id+'/';
+    const objects=[];
+    for(let offset=0;offset<=10000;offset+=1000){
+      const response=await cloud().authenticatedFetch('/storage/v1/object/list/'+bucket,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({prefix,limit:1000,offset,sortBy:{column:'name',order:'asc'}})
+      });
+      const batch=await response.json();
+      if(!Array.isArray(batch))throw Error('Could not inspect stored pattern images.');
+      for(const object of batch){
+        if(typeof object.name==='string'&&/^[a-z0-9-]+\.webp$/.test(object.name))
+          objects.push(prefix+object.name);
+      }
+      if(batch.length<1000)return objects;
+    }
+    throw Error('Too many stored images to delete in one operation.');
+  }
   async function remove(id){
-    if(!validId(id))throw Error('Invalid guide');
+    if(!validId(id))throw Error('Only your imported guides can be deleted.');
     const user=currentUser();
-    await cloud().authenticatedFetch('/rest/v1/sunbeam_custom_patterns?user_id=eq.'+
-      encodeURIComponent(user)+'&id=eq.'+encodeURIComponent(id),{method:'DELETE'});
-    // Image objects are left for explicit cleanup; a failed delete must never
-    // remove photos belonging to a guide that is still in the database.
+    const selector='user_id=eq.'+encodeURIComponent(user)+'&id=eq.'+encodeURIComponent(id);
+    const response=await cloud().authenticatedFetch('/rest/v1/sunbeam_custom_patterns?select=id,payload&'+selector+'&limit=1');
+    const [row]=await response.json();
+    if(!row?.payload)throw Error('This pattern no longer exists in your account.');
+    const prefix=user+'/'+id+'/';
+    const stored=await listStoredPhotos(user,id);
+    const referenced=Object.values(row.payload.imagePaths||{})
+      .filter(path=>typeof path==='string'&&path.startsWith(prefix));
+    const images=[...new Set([...stored,...referenced])];
+    // Prevent a delayed upload from a previous open guide from resurrecting
+    // deleted progress and notes in the user's database.
+    await cloud().blockPatternSync(id);
+    // Delete every Storage object in the folder, including abandoned photos
+    // from earlier edits (not only photos referenced by the latest revision).
+    for(let start=0;start<images.length;start+=500){
+      await cloud().authenticatedFetch('/storage/v1/object/'+bucket,{
+        method:'DELETE',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({prefixes:images.slice(start,start+500)})
+      });
+    }
+    const leftovers=await listStoredPhotos(user,id);
+    if(leftovers.length)throw Error('Some images could not be removed; the guide is still available. Try again.');
+    // RLS authorizes DELETE only for the owner of these rows.
+    await cloud().authenticatedFetch('/rest/v1/sunbeam_progress?user_id=eq.'+
+      encodeURIComponent(user)+'&pattern_id=eq.'+encodeURIComponent(id),{method:'DELETE'});
+    await cloud().authenticatedFetch('/rest/v1/sunbeam_custom_patterns?'+selector,{method:'DELETE'});
+    const confirm=await cloud().authenticatedFetch(
+      '/rest/v1/sunbeam_custom_patterns?select=id&'+selector);
+    if((await confirm.json()).length)
+      throw Error('Could not confirm permanent deletion. Try again.');
+    return {removed:true,imagesRemoved:images.length};
   }
   window.SunbeamCustomPatterns=Object.freeze({list,load,save,remove,validId});
 })();

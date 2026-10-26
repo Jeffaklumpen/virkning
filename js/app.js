@@ -8,7 +8,7 @@
   const {esc, icon, picture, validPattern, stepsFor, groupSteps, stats} = window.SunbeamPatterns;
   const {baseProgress, loadProgress, persistProgress, setGuideKey,
     getGuide, listStoredIds, storeGuide, storePreview, getPreviews, forgetAuthKey,
-    setProgressUser} = window.SunbeamStorage;
+    setProgressUser, removeCachedPattern} = window.SunbeamStorage;
   const {unwrapPrivatePatternKey, decryptGuide} = window.SunbeamCrypto;
   const {estimateTime} = window.SunbeamEstimates;
   const {render: swapView} = window.SunbeamMotion;
@@ -16,6 +16,7 @@
   const keyring=window.SunbeamKeyring;
   const custom=window.SunbeamCustomPatterns;
   const importer=window.SunbeamPdfImporter;
+  let requestedDeletion=null,removingPattern=false;
   function persist() {
     progress.updatedAt = new Date().toISOString();
     persistProgress(activeId, progress);
@@ -319,10 +320,49 @@
     bindModalControls();
   }
 
+  function confirmDeletePattern(id){
+    const entry=patterns.find(p=>p.id===id);
+    if(!entry?.custom||!custom.validId(id))return;
+    requestedDeletion=id;
+    showModal('<div class="dialog-head"><div><span class="kicker">permanent deletion</span>'+
+      '<h2>Delete '+esc(entry.title)+'?</h2></div>'+
+      '<button type="button" class="x-btn" data-action="close-modal" aria-label="Close dialog">×</button></div>'+
+      '<p>This removes the entire imported guide, <strong>all its photos</strong>, completed steps, personal notes and progress from your private Supabase account.</p>'+
+      '<p><strong>This cannot be undone.</strong> The original PDF was never stored, so you would have to import it again to restore this pattern.</p>'+
+      '<p role="alert" id="delete-pattern-error" class="login-error"></p>'+
+      '<div class="pattern-delete-buttons">'+
+      '<button type="button" class="btn btn-secondary" data-action="close-modal">Keep my pattern</button>'+
+      '<button type="button" class="btn btn-primary pattern-danger-action" data-action="confirm-delete-custom">Yes, delete permanently</button></div>');
+  }
+  async function deletePersonalPattern(){
+    const id=requestedDeletion;
+    if(!id||removingPattern||!custom.validId(id))return;
+    removingPattern=true;
+    const button=modal.querySelector('[data-action="confirm-delete-custom"]');
+    if(button){button.disabled=true;button.textContent='Deleting your pattern…'}
+    try{
+      await custom.remove(id);
+      // Supabase deletion completed. Always remove cached guide, preview,
+      // local notes/progress and any pending sync record on this device.
+      await removeCachedPattern(id);
+      loadedPatterns.delete(id);
+      previewImages.delete(id);
+      patterns=patterns.filter(p=>p.id!==id);
+      if(activeId===id){activeId=null;activeStep=null;progress={}}
+      requestedDeletion=null;
+      closeModal();renderLibrary();
+      toast('Pattern, images, notes and progress deleted permanently.');
+    }catch(error){
+      const status=modal.querySelector('#delete-pattern-error');
+      if(status)status.textContent='Could not finish deleting: '+(error?.message||'Try again while online.');
+      if(button){button.disabled=false;button.textContent='Retry deletion'}
+    }finally{removingPattern=false}
+  }
+
   function showDictionary(){const p=getPattern();let dict=p?.dictionary||{sc:'Single crochet (US terms)',inc:'Increase (2 sc in one stitch)',dec:'Decrease (2 stitches joined into 1)',slst:'Slip stitch',ch:'Chain',FO:'Fasten off',BLO:'Back loops only',FLO:'Front loops only',bo:'Bobble stitch',hdc:'Half double crochet',dc:'Double crochet',htr:'Half treble crochet'};showModal(`<div class="dialog-head"><div><span class="kicker">little helper</span><h2>Stitch dictionary ✿</h2></div><button class="x-btn" data-action="close-modal" aria-label="Close">×</button></div><p>Quick reminders for the abbreviations in this pattern (US terminology).</p><div class="dictionary">${Object.entries(dict).map(([k,v])=>`<div class="dict-item"><b>${esc(k)}</b> ${esc(v)}</div>`).join('')}</div><button class="btn btn-primary" data-action="close-modal">Back to crocheting ♡</button>`)}
   function showZoom(key){const p=getPattern(),src=picture(p,key);if(!src)return;modal.innerHTML=`<div class="dialog-backdrop zoom-backdrop" data-action="close-modal"><button class="x-btn" style="position:absolute;right:20px;top:20px" data-action="close-modal" aria-label="Close">×</button><img class="dialog-img" src="${src}" alt="Enlarged crochet reference photograph"></div>`;document.body.style.overflow='hidden';bindModalControls()}
   function resetConfirm(){const p=getPattern();if(!p)return;showModal(`<div class="dialog-head"><div><span class="kicker">fresh beginning?</span><h2>Restart ${esc(p.title)}?</h2></div><button type="button" class="x-btn" data-action="close-modal" aria-label="Close restart dialog">×</button></div><p>All completed-step checkmarks for this pattern will be cleared. This cannot be undone.</p><button type="button" class="btn btn-primary" data-action="confirm-reset">Yes, start again</button><button type="button" class="btn btn-secondary" data-action="close-modal">Keep my progress</button>`)}
-  async function handleAction(button){const action=button.dataset.action;switch(action){case 'import-pdf':startPdfImport();break;case 'edit-custom':void editPersonalPattern();break;case 'sign-out':void signOut();break;case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id,overviewOpen?'back':'forward');break;case 'overview':renderOverview();break;case 'overview-top':if(overviewOpen)window.scrollTo({top:0,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;case 'back-to-guide':returnToGuide();break;case 'overview-section':{if(!overviewOpen)break;const section=document.getElementById('overview-group-'+button.dataset.id);section?.scrollIntoView({behavior:'smooth',block:'start'});break}case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
+  async function handleAction(button){const action=button.dataset.action;switch(action){case 'delete-custom':confirmDeletePattern(button.dataset.id||activeId);break;case 'confirm-delete-custom':void deletePersonalPattern();break;case 'import-pdf':startPdfImport();break;case 'edit-custom':void editPersonalPattern();break;case 'sign-out':void signOut();break;case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id,overviewOpen?'back':'forward');break;case 'overview':renderOverview();break;case 'overview-top':if(overviewOpen)window.scrollTo({top:0,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;case 'back-to-guide':returnToGuide();break;case 'overview-section':{if(!overviewOpen)break;const section=document.getElementById('overview-group-'+button.dataset.id);section?.scrollIntoView({behavior:'smooth',block:'start'});break}case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
   document.addEventListener('click',e=>{const t=e.target.closest('[data-action]');if(!t)return; if(t.classList.contains('dialog-backdrop')&&e.target!==t)return; e.preventDefault();handleAction(t)});
   // Keep typing smooth on iPad. Save in local storage on every edit, while
   // the existing cloud sync uploads after a short pause in typing.

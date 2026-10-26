@@ -5,6 +5,10 @@
   const {esc}=window.SunbeamPatterns;
   const PHOTOS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
   let loader=null,root=null,draft=null,callbacks=null,busy=false,bindRoot=null;
+  // The PDF.js document stays ONLY in memory while this import is being edited.
+  // It is disposed on save/cancel, never persisted or uploaded.
+  let pdfDocument=null,highQualityPages=new Map(),previewOverlay=null;
+  let previewIndex=0,previewGeneration=0,previewReturnFocus=null,previewKeyListener=null;
   const random=()=>crypto.randomUUID().replace(/-/g,'').slice(0,16);
   const id=prefix=>prefix+'-'+random();
   const text=value=>String(value||'');
@@ -90,6 +94,7 @@
     if(!file||!(file.type==='application/pdf'||/\.pdf$/i.test(file.name)))
       throw Error('Please choose a PDF file.');
     if(file.size>20*1024*1024)throw Error('This PDF is over 20 MB. Please choose a smaller file.');
+    if(pdfDocument){const previous=pdfDocument;pdfDocument=null;highQualityPages.clear();await previous.destroy().catch(()=>{})}
     const lib=await loadPdf();
     // The only read of the original file. The ArrayBuffer is NOT persisted.
     let raw=await file.arrayBuffer();
@@ -118,10 +123,14 @@
         pages.push({number:pageNo,lines,image});
         page.cleanup();
       }
-      return parsePages(pages,file.name);
+      const parsed=parsePages(pages,file.name);
+      // Keep vector-quality PDF pages available for on-demand zoom/crop, without saving the file.
+      pdfDocument=doc;
+      doc=null;
+      return parsed;
     }finally{
       if(doc)await doc.destroy().catch(()=>{});
-      else await job.destroy().catch(()=>{});
+      else if(!pdfDocument)await job.destroy().catch(()=>{});
     }
   }
   function pageShell(content){
@@ -161,7 +170,7 @@
       '<button title="Remove step" data-import-action="step-delete" data-group="'+esc(g.id)+'" data-step="'+esc(step.id)+'">×</button></div></div>'+
       '<label class="import-label">Step title<input data-field="step-title" data-group="'+esc(g.id)+'" data-step="'+esc(step.id)+'" value="'+esc(step.title)+'" maxlength="160" /></label>'+
       '<label class="import-label">Instructions<textarea rows="3" data-field="instruction" data-group="'+esc(g.id)+'" data-step="'+esc(step.id)+'" maxlength="10000">'+esc(step.instruction)+'</textarea></label>'+
-      '<div class="import-step-image-row">'+(step.image&&draft.images?.[step.image]?'<img alt="Selected original PDF reference" src="'+draft.images[step.image]+'" />':'<div class="import-no-image">No image</div>')+
+      '<div class="import-step-image-row">'+(step.image&&draft.images?.[step.image]?'<button type="button" class="import-image-preview-trigger import-step-preview" data-import-action="preview" data-image-key="'+esc(step.image)+'" title="Enlarge reference image" aria-label="Enlarge '+esc(step.image.replace(/^page-/,'PDF page '))+'"><img alt="Selected PDF reference – tap to enlarge" src="'+draft.images[step.image]+'" /><span>⌕ View larger</span></button>':'<div class="import-no-image">No image</div>')+
       '<div class="import-step-image-tools"><label>Reference image'+selectImage(step.image)+'</label>'+
       '<label>Move into section<select data-field="move-section" data-group="'+esc(g.id)+'" data-step="'+esc(step.id)+'">'+groupOptions(g.id)+'</select></label>'+
       (step.image&&draft.images?.[step.image]?'<button class="btn btn-soft" type="button" data-import-action="crop" data-group="'+esc(g.id)+'" data-step="'+esc(step.id)+'">✂ Crop image</button>':'')+
@@ -180,7 +189,7 @@
       '<label class="import-label">Cover image<select data-field="cover">'+
       Object.keys(draft.images||{}).map(k=>'<option value="'+esc(k)+'" '+(k===draft.cover?'selected':'')+'>'+esc(k.replace(/^page-/,'PDF page ').replace(/^crop-/,'Crop '))+'</option>').join('')+
       '</select></label>'+
-      (draft.cover&&draft.images?.[draft.cover]?'<img class="import-cover-preview" alt="Cover preview" src="'+draft.images[draft.cover]+'" />':'')+
+      (draft.cover&&draft.images?.[draft.cover]?'<button type="button" class="import-image-preview-trigger import-cover-trigger" data-import-action="preview" data-image-key="'+esc(draft.cover)+'" aria-label="Enlarge cover image"><img class="import-cover-preview" alt="Cover preview – tap to enlarge" src="'+draft.images[draft.cover]+'" /><span>⌕ View larger</span></button>':'')+
       '<p class="import-editor-hint">The PDF itself is not kept. Use the reference image dropdowns to position the original page images, or crop just the photo you need.</p>'+
       '</div></aside><div class="import-group-list">'+groupMarkup+
       '<button class="import-add-group" data-import-action="add-group">+ Add another section</button></div></div>'+
@@ -247,6 +256,7 @@
     if(which==='cancel'){cancel();return}
     if(which==='save'){void save();return}
     if(!draft)return;
+    if(which==='preview'){void openImagePreview(node.dataset.imageKey);return}
     const {group,step,index}=findStep(node.dataset.group,node.dataset.step);
     const gi=draft.groups.indexOf(group);
     if(which==='add-group')draft.groups.push({id:id('section'),title:'New section',steps:[]});
@@ -263,12 +273,139 @@
       if(!window.confirm('Remove this step?'))return;
       group.steps.splice(index,1);
     }
-    if(which==='crop'&&step){crop(step);return}
+    if(which==='crop'&&step){void crop(step);return}
     render(editor());
   }
-  function crop(step){
+  async function sourceForImage(key){
+    if(!draft?.images?.[key])throw Error('This reference image is unavailable.');
+    if(!pdfDocument||!/^page-[1-9]\d*$/.test(key))return draft.images[key];
+    if(highQualityPages.has(key))return highQualityPages.get(key);
+    const page=await pdfDocument.getPage(Number(key.slice(5)));
+    try{
+      const base=page.getViewport({scale:1});
+      // Render from the original PDF at up to ~7 MP, rather than resizing the
+      // previous 960px/0.73-quality thumbnail. Avoid iPad memory spikes.
+      const scale=Math.min(4,3200/Math.max(base.width,base.height),
+        Math.sqrt(7000000/Math.max(1,base.width*base.height)));
+      const viewport=page.getViewport({scale});
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.max(1,Math.round(viewport.width));
+      canvas.height=Math.max(1,Math.round(viewport.height));
+      const ctx=canvas.getContext('2d',{alpha:false});
+      ctx.fillStyle='#fff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      await page.render({canvasContext:ctx,viewport}).promise;
+      const original=canvas.toDataURL('image/webp',.96);
+      canvas.width=canvas.height=0;
+      highQualityPages.set(key,original);
+      // Keep only the most recent two high-resolution renderings in memory.
+      while(highQualityPages.size>2)
+        highQualityPages.delete(highQualityPages.keys().next().value);
+      return original;
+    }finally{page.cleanup()}
+  }
+  function closeImagePreview(){
+    if(!previewOverlay)return;
+    previewGeneration++;
+    if(previewKeyListener)document.removeEventListener('keydown',previewKeyListener,true);
+    previewKeyListener=null;
+    const previousOverflow=previewOverlay.dataset.previousOverflow||'';
+    previewOverlay.remove();previewOverlay=null;
+    document.body.style.overflow=previousOverflow;
+    previewReturnFocus?.focus?.();previewReturnFocus=null;
+  }
+  function imageLabel(key){
+    return /^page-\d+$/.test(key)?'PDF page '+key.slice(5)
+      :/^crop-/.test(key)?'Cropped image':key.replace(/-/g,' ');
+  }
+  async function openImagePreview(key){
+    if(!draft?.images?.[key])return;
+    if(!previewOverlay){
+      previewReturnFocus=document.activeElement;
+      const overlay=document.createElement('div');
+      overlay.className='import-preview-backdrop';
+      overlay.dataset.previousOverflow=document.body.style.overflow||'';
+      overlay.innerHTML='<div class="import-preview-dialog" role="dialog" aria-modal="true" aria-label="Enlarged reference image">'+
+        '<header class="import-preview-toolbar"><div><strong>Reference image</strong><small data-preview-caption></small></div>'+
+        '<div class="import-preview-tools"><button type="button" data-preview="prev" aria-label="Previous image" title="Previous image">←</button>'+
+        '<button type="button" data-preview="next" aria-label="Next image" title="Next image">→</button>'+
+        '<button type="button" data-preview="out" aria-label="Zoom out">−</button>'+
+        '<span class="import-preview-scale" data-preview-scale>100%</span>'+
+        '<button type="button" data-preview="in" aria-label="Zoom in">+</button>'+
+        '<button type="button" data-preview="reset" aria-label="Fit image to screen">Fit</button>'+
+        '<button type="button" class="import-preview-close" data-preview="close" aria-label="Close enlarged image">×</button></div></header>'+
+        '<div class="import-preview-viewport" data-preview-viewport><div class="import-preview-loading" data-preview-loading>Loading full-size image…</div>'+
+        '<img hidden data-preview-image alt="Enlarged crochet reference image" /></div>'+
+        '<footer class="import-preview-hint">Tap an arrow to compare pages · Use + / − to zoom · Swipe to pan when enlarged</footer></div>';
+      document.body.appendChild(overlay);
+      previewOverlay=overlay;
+      document.body.style.overflow='hidden';
+      overlay.addEventListener('click',e=>{
+        if(e.target===overlay){closeImagePreview();return}
+        const button=e.target.closest('[data-preview]');
+        if(!button)return;
+        const action=button.dataset.preview;
+        if(action==='close')closeImagePreview();
+        else if(action==='in')applyPreviewZoom((previewOverlay._zoom||1)*1.4);
+        else if(action==='out')applyPreviewZoom((previewOverlay._zoom||1)/1.4);
+        else if(action==='reset')applyPreviewZoom(1);
+        else if(action==='prev'||action==='next')void openImagePreview(
+          previewKeys()[(previewIndex+(action==='next'?1:-1)+previewKeys().length)%previewKeys().length]);
+      });
+      previewKeyListener=e=>{
+        if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();closeImagePreview()}
+        else if(e.key==='ArrowRight'){e.preventDefault();e.stopImmediatePropagation();void openImagePreview(previewKeys()[(previewIndex+1)%previewKeys().length])}
+        else if(e.key==='ArrowLeft'){e.preventDefault();e.stopImmediatePropagation();void openImagePreview(previewKeys()[(previewIndex-1+previewKeys().length)%previewKeys().length])}
+      };
+      document.addEventListener('keydown',previewKeyListener,true);
+      overlay.querySelector('[data-preview="close"]').focus();
+    }
+    const keys=previewKeys();
+    previewIndex=Math.max(0,keys.indexOf(key));
+    const seq=++previewGeneration,overlay=previewOverlay;
+    const viewport=overlay.querySelector('[data-preview-viewport]');
+    const image=overlay.querySelector('[data-preview-image]');
+    image.hidden=true;
+    overlay.querySelector('[data-preview-loading]').hidden=false;
+    overlay.querySelector('[data-preview-caption]').textContent=imageLabel(key)+' · '+(previewIndex+1)+' of '+keys.length;
+    overlay.querySelectorAll('[data-preview="prev"],[data-preview="next"]').forEach(b=>b.disabled=keys.length<2);
+    try{
+      const src=await sourceForImage(key);
+      if(seq!==previewGeneration||overlay!==previewOverlay)return;
+      image.onload=()=>{
+        if(seq!==previewGeneration)return;
+        image.hidden=false;overlay.querySelector('[data-preview-loading]').hidden=true;
+        applyPreviewZoom(1);viewport.scrollTo(0,0);
+      };
+      image.src=src;
+    }catch(error){
+      if(seq===previewGeneration)overlay.querySelector('[data-preview-loading]').textContent='Could not load this image.';
+    }
+  }
+  function previewKeys(){return Object.keys(draft?.images||{}).filter(key=>draft.images[key])}
+  function applyPreviewZoom(level){
+    if(!previewOverlay)return;
+    const image=previewOverlay.querySelector('[data-preview-image]');
+    if(!image||!image.naturalWidth)return;
+    const viewport=previewOverlay.querySelector('[data-preview-viewport]');
+    const factor=Math.max(.4,Math.min(4,level));
+    const fitWidth=Math.min(image.naturalWidth,Math.max(260,viewport.clientWidth-24));
+    image.style.width=Math.round(fitWidth*factor)+'px';
+    image.style.maxWidth='none';image.style.maxHeight='none';
+    previewOverlay._zoom=factor;
+    previewOverlay.querySelector('[data-preview-scale]').textContent=Math.round(factor*100)+'%';
+  }
+  async function crop(step){
     if(!step.image||!draft.images[step.image])return;
-    const original=draft.images[step.image];
+    // The selection preview may be a low-resolution PDF page thumbnail.
+    // Re-render its source page directly from the PDF before cropping.
+    const imageKey=step.image;
+    let original;
+    try{
+      update('Preparing a high-quality image for cropping…');
+      original=await sourceForImage(imageKey);
+    }catch{original=draft.images[imageKey]}
+    if(!root||!draft?.images?.[imageKey])return;
     const overlay=document.createElement('div');
     overlay.className='import-crop-backdrop';
     overlay.innerHTML='<div class="import-crop-dialog" role="dialog" aria-modal="true" aria-label="Crop reference image">'+
@@ -313,14 +450,18 @@
     overlay.querySelector('[data-crop="cancel"]').addEventListener('click',()=>overlay.remove());
     overlay.querySelector('[data-crop="apply"]').addEventListener('click',()=>{
       if(!rect||rect.w<12||rect.h<12){overlay.remove();return}
-      const size=Math.min(1,960/Math.max(rect.w,rect.h));
+      // Do not upscale a small crop, which would only amplify blur.
+      const sourceWidth=rect.w*img.naturalWidth/canvas.width;
+      const sourceHeight=rect.h*img.naturalHeight/canvas.height;
+      const size=Math.min(1,2400/Math.max(sourceWidth,sourceHeight));
       const result=document.createElement('canvas');
-      result.width=Math.max(1,Math.round(rect.w*size));result.height=Math.max(1,Math.round(rect.h*size));
+      result.width=Math.max(1,Math.round(sourceWidth*size));
+      result.height=Math.max(1,Math.round(sourceHeight*size));
       result.getContext('2d').drawImage(img,rect.x*img.naturalWidth/canvas.width,
         rect.y*img.naturalHeight/canvas.height,rect.w*img.naturalWidth/canvas.width,
         rect.h*img.naturalHeight/canvas.height,0,0,result.width,result.height);
       const key=id('crop');
-      draft.images[key]=result.toDataURL('image/webp',.78);
+      draft.images[key]=result.toDataURL('image/webp',.94);
       step.image=key;result.width=result.height=0;
       overlay.remove();render(editor());
     });
@@ -349,7 +490,11 @@
       root.removeEventListener('input',bindRoot.input);
     }
     document.querySelector('.import-crop-backdrop')?.remove();
-    // Release rendered PDF pages and all unsaved photo data from memory.
+    closeImagePreview();
+    highQualityPages.clear();
+    const oldDoc=pdfDocument;pdfDocument=null;
+    if(oldDoc)void oldDoc.destroy().catch(()=>{});
+    // Release original PDF document and all unsaved photo data from memory.
     draft=null;busy=false;bindRoot=null;root=null;callbacks=null;
   }
   function cancel(){const done=callbacks?.onCancel;stop();done?.()}

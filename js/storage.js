@@ -240,9 +240,40 @@
     }
     return previews;
   }
+  function clearLocalProgress(id){
+    // Remove all device progress, notes and pending-sync markers for this pattern.
+    localStorage.removeItem(scopedKey(id));
+    if(dirtyKey(id))localStorage.removeItem(dirtyKey(id));
+    // Imported patterns are never part of the bundled legacy guide catalogue.
+    if(id.startsWith('my-'))localStorage.removeItem(saveKey(id));
+  }
+  async function removeCachedPattern(id){
+    // Remove AES-GCM-encrypted offline guide AND any preview thumbnail.
+    await Promise.all([
+      (async()=>{
+        const db=await dbOpen();
+        return new Promise((resolve,reject)=>{
+          const tx=db.transaction(STORE,'readwrite');
+          tx.objectStore(STORE).delete(id);
+          tx.oncomplete=()=>{db.close();resolve()};
+          tx.onerror=()=>{db.close();reject(tx.error)}
+        });
+      })(),
+      (async()=>{
+        const db=await previewsDbOpen();
+        return new Promise((resolve,reject)=>{
+          const tx=db.transaction(PREVIEW_STORE,'readwrite');
+          tx.objectStore(PREVIEW_STORE).delete(id);
+          tx.oncomplete=()=>{db.close();resolve()};
+          tx.onerror=()=>{db.close();reject(tx.error)}
+        });
+      })()
+    ]);
+    clearLocalProgress(id);
+  }
   window.SunbeamStorage = Object.freeze({
     saveKey, baseProgress, loadProgress, persistProgress,
-    setProgressUser, getProgressRecord, applyCloudProgress, markProgressSynced,
+    setProgressUser, getProgressRecord, applyCloudProgress, markProgressSynced, clearLocalProgress, removeCachedPattern,
     setGuideKey, getAllGuides, storeGuide, getGuide, listStoredIds, storePreview, getPreviews, savedAuthKey, rememberAuthKey, forgetAuthKey
   });
 })();
