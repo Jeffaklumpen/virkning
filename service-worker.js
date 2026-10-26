@@ -1,6 +1,6 @@
 /* Sunbeam Art — lean offline shell. Encrypted guides are cached when opened. */
 'use strict';
-const CACHE = 'sunbeam-art-offline-v25';
+const CACHE = 'sunbeam-art-offline-v26';
 const SHELL = [
   "./",
   "./index.html",
@@ -23,7 +23,9 @@ const SHELL = [
   "./js/motion.js",
   "./js/previews.js",
   "./js/app.js",
+  "./js/cloud.js",
   "./config/auth-config.js",
+  "./config/supabase-config.js",
   "./config/donut-envelope.json",
   "./assets/sunbeam-bee.svg",
   "./assets/sunbeam-icon-180.png",

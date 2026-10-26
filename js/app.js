@@ -7,13 +7,16 @@
   let patterns=[], loadedPatterns=new Map(), activeId=null, activeStep=null, activeGroup=null, progress={}, authKey=null, patternKey=null, loadingToken=0, previewImages=new Map(), photoSweepId=0, overviewOpen=false;
   const {esc, icon, picture, validPattern, stepsFor, groupSteps, stats} = window.SunbeamPatterns;
   const {baseProgress, loadProgress, persistProgress, setGuideKey,
-    getGuide, listStoredIds, storeGuide, storePreview, getPreviews, savedAuthKey, rememberAuthKey, forgetAuthKey} = window.SunbeamStorage;
+    getGuide, listStoredIds, storeGuide, storePreview, getPreviews, savedAuthKey, rememberAuthKey, forgetAuthKey,
+    setProgressUser} = window.SunbeamStorage;
   const {derivePasswordKey, unwrapPrivatePatternKey, decryptGuide} = window.SunbeamCrypto;
   const {estimateTime} = window.SunbeamEstimates;
   const {render: swapView} = window.SunbeamMotion;
+  const cloud=window.SunbeamCloud;
   function persist() {
     progress.updatedAt = new Date().toISOString();
     persistProgress(activeId, progress);
+    if(activeId && cloud.state().connected)cloud.schedule(activeId);
   }
   function getPattern(){return loadedPatterns.get(activeId)}
   function toast(message){document.querySelector('.toast')?.remove();const n=document.createElement('div');n.className='toast';n.textContent=message;document.body.append(n);setTimeout(()=>n.remove(),2900)}
@@ -31,6 +34,8 @@
   async function enterLibrary(loginKey){
   const key=await unwrapPrivatePatternKey(loginKey);
   setGuideKey(key);
+  const member=await cloud.restore();
+  setProgressUser(member?.user_id||null,member?.role==='owner');
   const [entries,localIds,previews]=await Promise.all([window.SunbeamGuides.catalog(),listStoredIds(),getPreviews().catch(()=>({}))]);
   const known=new Set(entries.map(e=>e.id));
   // Hide the retired pattern without touching IndexedDB records or saved progress.
@@ -42,6 +47,14 @@
   patternKey=key;authKey=loginKey;
   renderLibrary();
   void populateEncryptedCoverPhotos();
+  if(member)void cloud.syncAll(patterns.map(p=>p.id)).then(()=>{
+    if(!authKey)return;
+    if(activeId && loadedPatterns.has(activeId)){
+      const step=activeStep;
+      progress=loadProgress(activeId);
+      renderGuide(step,'back');
+    }else if(!activeId)renderLibrary();
+  });
 }
   async function signInWithPassword(){
     const field=el.querySelector('#sunbeam-password');
@@ -73,7 +86,7 @@
     const n=loadedPatterns.has(meta.id)?stats(p,pr):(pr.knownStats||{total:0,complete:0,percent:0});
     return {p,pr,n,time:estimateTime(p,pr)};
   }).sort((a,b)=>(b.pr.updatedAt||'').localeCompare(a.pr.updatedAt||''));
-  swapView(el,window.SunbeamViews.library(started,patterns.length),'library',{direction:'back'});
+  swapView(el,window.SunbeamViews.library(started,patterns.length,cloud.state()),'library',{direction:'back'});
 }
   function renderGuide(stepId,direction='forward'){
   overviewOpen=false;
@@ -240,10 +253,77 @@
     document.body.style.overflow='hidden';
     bindModalControls();
   }
+
+  function cloudStatusLabel(){
+    const state=cloud.state();
+    if(!state.connected)return 'Connect cloud backup';
+    return {
+      connecting:'Connecting to cloud…',saving:'Saving to cloud…',
+      synced:'Saved in cloud ✓',offline:'Offline — saved on this device',
+      error:'Cloud sync issue — tap to retry',local:'Connect cloud backup'
+    }[state.status]||'Cloud backup';
+  }
+  function updateCloudBadge(){
+    const button=el.querySelector('#sunbeam-cloud-button');
+    if(button)button.textContent=cloudStatusLabel();
+  }
+  document.addEventListener('sunbeam-cloud-status',updateCloudBadge);
+  function showCloudModal(){
+    const account=cloud.state();
+    if(account.connected){
+      showModal('<div class="dialog-head"><div><span class="kicker">Personal cloud backup</span>'+
+        '<h2>Cloud backup</h2></div><button class="x-btn" data-action="close-modal" aria-label="Close">×</button></div>'+
+        '<p>Your crochet progress, choices and checklist are kept under your own account.</p>'+
+        '<p><strong>'+esc(account.email)+'</strong></p>'+
+        '<p class="small-note">'+esc(cloudStatusLabel())+'</p>'+
+        '<button type="button" class="btn btn-primary" data-action="cloud-retry">Sync now</button> '+
+        '<button type="button" class="btn btn-secondary" data-action="cloud-disconnect">Switch account</button>');
+      return;
+    }
+    showModal('<div class="dialog-head"><div><span class="kicker">Private cloud backup</span>'+
+      '<h2>Save across devices</h2></div><button class="x-btn" data-action="close-modal" aria-label="Close">×</button></div>'+
+      '<p>Sign in with your approved Sunbeam account to securely sync finished steps, materials and project choices. Your pattern password stays separate.</p>'+
+      '<label for="sunbeam-cloud-email">Email</label>'+
+      '<input type="email" id="sunbeam-cloud-email" autocomplete="username" placeholder="Email address" style="width:100%;margin:8px 0 16px" />'+
+      '<label for="sunbeam-cloud-password">Account password</label>'+
+      '<input type="password" id="sunbeam-cloud-password" autocomplete="current-password" placeholder="Supabase account password" style="width:100%;margin:8px 0 12px" />'+
+      '<p id="sunbeam-cloud-error" class="login-error" role="alert"></p>'+
+      '<button type="button" class="btn btn-primary" data-action="cloud-connect">Connect cloud backup</button>'+
+      '<p class="small-note">Only invited accounts are allowed to sync. Projects stay saved locally when offline.</p>');
+  }
+  async function connectCloud(){
+    const email=modal.querySelector('#sunbeam-cloud-email')?.value.trim();
+    const password=modal.querySelector('#sunbeam-cloud-password')?.value||'';
+    const error=modal.querySelector('#sunbeam-cloud-error');
+    const button=modal.querySelector('[data-action="cloud-connect"]');
+    if(button)button.disabled=true;
+    if(error)error.textContent='';
+    try{
+      const member=await cloud.login(email,password);
+      setProgressUser(member.user_id,member.role==='owner');
+      await cloud.syncAll(patterns.map(p=>p.id));
+      closeModal();
+      if(activeId && loadedPatterns.has(activeId)){
+        progress=loadProgress(activeId);renderGuide(activeStep,'back');
+      }else renderLibrary();
+      toast(cloud.state().status==='synced'?'Cloud backup connected ♡':'Cloud account connected; local changes will retry syncing.');
+    }catch(e){
+      if(error)error.textContent=e.message||'Could not connect cloud backup.';
+      if(button)button.disabled=false;
+    }
+  }
+  async function disconnectCloud(){
+    await cloud.disconnect();
+    setProgressUser(null);
+    await forgetAuthKey();
+    authKey=null;patternKey=null;loadedPatterns.clear();previewImages.clear();
+    closeModal();renderLogin();
+  }
+
   function showDictionary(){const p=getPattern();let dict=p?.dictionary||{sc:'Single crochet (US terms)',inc:'Increase (2 sc in one stitch)',dec:'Decrease (2 stitches joined into 1)',slst:'Slip stitch',ch:'Chain',FO:'Fasten off',BLO:'Back loops only',FLO:'Front loops only',bo:'Bobble stitch',hdc:'Half double crochet',dc:'Double crochet',htr:'Half treble crochet'};showModal(`<div class="dialog-head"><div><span class="kicker">little helper</span><h2>Stitch dictionary ✿</h2></div><button class="x-btn" data-action="close-modal" aria-label="Close">×</button></div><p>Quick reminders for the abbreviations in this pattern (US terminology).</p><div class="dictionary">${Object.entries(dict).map(([k,v])=>`<div class="dict-item"><b>${esc(k)}</b> ${esc(v)}</div>`).join('')}</div><button class="btn btn-primary" data-action="close-modal">Back to crocheting ♡</button>`)}
   function showZoom(key){const p=getPattern(),src=picture(p,key);if(!src)return;modal.innerHTML=`<div class="dialog-backdrop zoom-backdrop" data-action="close-modal"><button class="x-btn" style="position:absolute;right:20px;top:20px" data-action="close-modal" aria-label="Close">×</button><img class="dialog-img" src="${src}" alt="Enlarged crochet reference photograph"></div>`;document.body.style.overflow='hidden';bindModalControls()}
   function resetConfirm(){const p=getPattern();if(!p)return;showModal(`<div class="dialog-head"><div><span class="kicker">fresh beginning?</span><h2>Restart ${esc(p.title)}?</h2></div><button type="button" class="x-btn" data-action="close-modal" aria-label="Close restart dialog">×</button></div><p>All completed-step checkmarks for this pattern will be cleared. This cannot be undone.</p><button type="button" class="btn btn-primary" data-action="confirm-reset">Yes, start again</button><button type="button" class="btn btn-secondary" data-action="close-modal">Keep my progress</button>`)}
-  async function handleAction(button){const action=button.dataset.action;switch(action){case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id,overviewOpen?'back':'forward');break;case 'overview':renderOverview();break;case 'overview-top':if(overviewOpen)window.scrollTo({top:0,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;case 'back-to-guide':returnToGuide();break;case 'overview-section':{if(!overviewOpen)break;const section=document.getElementById('overview-group-'+button.dataset.id);section?.scrollIntoView({behavior:'smooth',block:'start'});break}case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
+  async function handleAction(button){const action=button.dataset.action;switch(action){case 'cloud':showCloudModal();break;case 'cloud-connect':void connectCloud();break;case 'cloud-retry':closeModal();void cloud.syncAll(patterns.map(p=>p.id)).then(()=>{if(activeId && loadedPatterns.has(activeId)){progress=loadProgress(activeId);renderGuide(activeStep,'back')}else renderLibrary()});break;case 'cloud-disconnect':void disconnectCloud();break;case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id,overviewOpen?'back':'forward');break;case 'overview':renderOverview();break;case 'overview-top':if(overviewOpen)window.scrollTo({top:0,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;case 'back-to-guide':returnToGuide();break;case 'overview-section':{if(!overviewOpen)break;const section=document.getElementById('overview-group-'+button.dataset.id);section?.scrollIntoView({behavior:'smooth',block:'start'});break}case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
   document.addEventListener('click',e=>{const t=e.target.closest('[data-action]');if(!t)return; if(t.classList.contains('dialog-backdrop')&&e.target!==t)return; e.preventDefault();handleAction(t)});
   document.addEventListener('change',e=>{const m=e.target.closest('[data-material]');if(m){progress.materials[m.dataset.material]=m.checked;persist();}});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modal.innerHTML){closeModal();return}if(overviewOpen){returnToGuide();return}closeModal();return}if(overviewOpen||!activeId||modal.innerHTML||['TEXTAREA','INPUT','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'){e.preventDefault();jump(1)}else if(e.key==='ArrowLeft'){e.preventDefault();jump(-1)}else if(e.key==='Enter' && document.activeElement?.dataset.action==='zoom'){showZoom(document.activeElement.dataset.key)}});

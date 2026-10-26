@@ -67,7 +67,10 @@ function sandbox() {
   const values = new Map();
   const localStorage = {
     getItem: key => values.has(key) ? values.get(key) : null,
-    setItem: (key, val) => values.set(key, val)
+    setItem: (key, val) => values.set(key, String(val)),
+    removeItem: key => values.delete(key),
+    key: index => [...values.keys()][index] ?? null,
+    get length() {return values.size}
   };
   const window = {DecompressionStream: globalThis.DecompressionStream};
   const context = {
@@ -687,4 +690,55 @@ test('Teacup Frog ships protected original-page references and cover', () => {
   runInNewContext(source('js/estimates.js'),{window});
   assert.equal(window.SunbeamEstimates.estimateFor(frog).min,3);
   assert.equal(window.SunbeamEstimates.estimateFor(frog).max,5);
+});
+
+
+test('Kimsi legacy progress migrates once, and future accounts stay isolated', () => {
+  const {window}=sandbox();
+  const store=window.SunbeamStorage;
+  const owner='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const other='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  store.persistProgress('little-tooth',{done:{round1:true},updatedAt:'2026-10-25T10:00:00Z'});
+  store.setProgressUser(owner,true);
+  assert.equal(store.loadProgress('little-tooth').done.round1,true);
+  assert.equal(store.getProgressRecord('little-tooth').dirty,'bootstrap');
+  // An existing cloud copy wins over a one-time, unsynced legacy import.
+  store.applyCloudProgress('little-tooth',{done:{round2:true},updatedAt:'2026-10-26T10:00:00Z'});
+  assert.equal(store.loadProgress('little-tooth').done.round1,undefined);
+  assert.equal(store.loadProgress('little-tooth').done.round2,true);
+  assert.equal(store.getProgressRecord('little-tooth').dirty,null);
+  store.persistProgress('little-tooth',{done:{round3:true}});
+  const first=store.getProgressRecord('little-tooth').dirty;
+  assert.ok(first.startsWith('local:'));
+  store.persistProgress('little-tooth',{done:{round4:true}});
+  store.markProgressSynced('little-tooth',first);
+  assert.notEqual(store.getProgressRecord('little-tooth').dirty,null,
+    'an older in-flight save must not clear a new pending edit');
+  store.markProgressSynced('little-tooth',store.getProgressRecord('little-tooth').dirty);
+  assert.equal(store.getProgressRecord('little-tooth').dirty,null);
+  store.setProgressUser(other,false);
+  assert.equal(store.getProgressRecord('little-tooth').present,false);
+  store.setProgressUser(null);
+  assert.equal(store.loadProgress('little-tooth').done.round1,true);
+});
+
+test('Supabase integration uses a publishable key, scoped RLS and offline-first progress', () => {
+  const html=source('index.html');
+  const sw=source('service-worker.js');
+  const cfg=source('config/supabase-config.js');
+  const cloud=source('js/cloud.js');
+  const app=source('js/app.js');
+  const storage=source('js/storage.js');
+  assert.match(cfg,/sb_publishable_/);
+  assert.doesNotMatch(cfg,/service_role|sb_secret_/);
+  assert.match(html,/connect-src 'self' https:\/\/ksmgnigwknzfargzjfzm\.supabase\.co/);
+  for(const file of ['config/supabase-config.js','js/cloud.js']){
+    assert.ok(html.includes(file),file+' must load in the app');
+    assert.ok(sw.includes(file),file+' must work when offline');
+  }
+  assert.match(cloud,/sunbeam_members/);
+  assert.match(cloud,/sunbeam_progress/);
+  assert.match(cloud,/resolution=merge-duplicates/);
+  assert.match(app,/cloud\.schedule\(activeId\)/);
+  assert.match(storage,/setProgressUser/);
 });

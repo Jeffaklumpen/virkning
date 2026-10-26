@@ -5,16 +5,53 @@
   const STORE = 'guides';
   const AUTH_DB = 'sunbeam-art-login-v1';
   const AUTH_STORE = 'auth';
-  let guideKey = null;
+  let guideKey = null, progressUser = null, progressChange = 0;
   const saveKey = id => 'kimsi-progress:' + id;
+  const scopedKey = id => progressUser ? 'sunbeam-progress:' + progressUser + ':' + id : saveKey(id);
+  const dirtyKey = id => progressUser ? 'sunbeam-dirty:' + progressUser + ':' + id : null;
+  function setProgressUser(id, migrateLegacy=false) {
+    progressUser = typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id) ? id : null;
+    if(!progressUser || !migrateLegacy)return;
+    // Only the approved owner may import Kimsi's existing unsynced iPad history.
+    const oldKeys=[];
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i);
+      if(key && key.startsWith('kimsi-progress:'))oldKeys.push(key);
+    }
+    for(const key of oldKeys){
+      const id=key.slice('kimsi-progress:'.length);
+      const target=scopedKey(id);
+      if(!localStorage.getItem(target) && localStorage.getItem(key)){
+        localStorage.setItem(target,localStorage.getItem(key));
+        localStorage.setItem(dirtyKey(id),'bootstrap');
+      }
+    }
+  }
+  function getProgressRecord(id){
+    const data=localStorage.getItem(scopedKey(id));
+    let progress=null;
+    try{progress=data?JSON.parse(data):null}catch{}
+    return {present:!!progress&&typeof progress==='object'&&!Array.isArray(progress),
+      progress,dirty:dirtyKey(id)?localStorage.getItem(dirtyKey(id)):null};
+  }
+  function applyCloudProgress(id,cloud){
+    if(!progressUser||!cloud||typeof cloud!=='object'||Array.isArray(cloud))return;
+    localStorage.setItem(scopedKey(id),JSON.stringify(cloud));
+    localStorage.removeItem(dirtyKey(id));
+  }
+  function markProgressSynced(id,expected){
+    if(progressUser && localStorage.getItem(dirtyKey(id))===expected)
+      localStorage.removeItem(dirtyKey(id));
+  }
   const baseProgress = () => ({done: {}, materials: {}, earOption: '2', variantOption: 'solid', lastStep: null, updatedAt: null});
 
   function loadProgress(id) {
-    try { return {...baseProgress(), ...JSON.parse(localStorage.getItem(saveKey(id)) || '{}')}; }
+    try { return {...baseProgress(), ...JSON.parse(localStorage.getItem(scopedKey(id)) || '{}')}; }
     catch { return baseProgress(); }
   }
   function persistProgress(id, progress) {
-    localStorage.setItem(saveKey(id), JSON.stringify(progress));
+    localStorage.setItem(scopedKey(id), JSON.stringify(progress));
+    if(progressUser)localStorage.setItem(dirtyKey(id),'local:'+Date.now()+':'+(++progressChange));
   }
   function openDb(name, store, keyPath) {
     return new Promise((resolve, reject) => {
@@ -205,6 +242,7 @@
   }
   window.SunbeamStorage = Object.freeze({
     saveKey, baseProgress, loadProgress, persistProgress,
+    setProgressUser, getProgressRecord, applyCloudProgress, markProgressSynced,
     setGuideKey, getAllGuides, storeGuide, getGuide, listStoredIds, storePreview, getPreviews, savedAuthKey, rememberAuthKey, forgetAuthKey
   });
 })();

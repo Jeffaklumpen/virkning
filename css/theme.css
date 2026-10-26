@@ -1103,3 +1103,18 @@ a {
 
 }
 
+
+/* Private Supabase progress sync. A small, optional control in the library. */
+.cloud-strip{display:flex;align-items:center;justify-content:space-between;gap:18px;
+  margin:0 0 32px;padding:18px 21px;border:1px solid #e5dacd;border-radius:20px;
+  background:rgba(255,255,255,.78);box-shadow:0 8px 28px rgba(73,54,74,.04)}
+.cloud-strip-info{display:flex;flex-direction:column;gap:5px;min-width:0}
+.cloud-strip-info strong{font:800 15px Nunito,sans-serif;color:#51435a}
+.cloud-strip-info span{font-size:13px;line-height:1.5;color:#716678}
+.cloud-button{flex:none;border:1px solid #d3b2bf;border-radius:999px;padding:12px 17px;
+  background:#fff7f9;color:#815169;font-weight:800;font-size:13px;cursor:pointer;
+  transition:background .15s ease,transform .15s ease}
+.cloud-button:hover{background:#f9e6ed;transform:translateY(-1px)}
+.cloud-button:focus-visible{outline:3px solid #9276a8;outline-offset:3px}
+@media(max-width:680px){.cloud-strip{align-items:stretch;flex-direction:column;gap:12px;
+  padding:17px;margin-bottom:26px}.cloud-button{width:100%;text-align:center}}
