@@ -175,8 +175,21 @@ test('variant-specific steps preserve separate completion', () => {
  assert.equal(rules.stats(guide,{earOption:'2',variantOption:'spotted',done:{solid:true}}).complete,0);
  assert.equal(rules.stats(guide,{earOption:'2',variantOption:'solid',done:{solid:true}}).complete,1);
 });
-test('sign out UI has been removed', () => {
- assert.doesNotMatch(source('js/app.js'),/data-action="sign-out"|case 'sign-out'|>Log out</);
+test('Supabase login replaces the old pattern-only login and sign-out is accessible', () => {
+ const app=source('js/app.js'),views=source('js/views.js'),cloud=source('js/cloud.js');
+ assert.match(views,/id="sunbeam-email"/);
+ assert.match(views,/id="sunbeam-password"/);
+ assert.match(views,/id="sunbeam-setup-form"/);
+ assert.match(views,/data-action="sign-out"/);
+ assert.doesNotMatch(views,/Connect cloud backup|cloud-strip/);
+ assert.match(app,/case 'sign-out':void signOut/);
+ assert.match(app,/cloud\.login\(email,password\)/);
+ assert.match(app,/cloud\.readKeyring\(\)/);
+ assert.match(app,/cloud\.requireFreshLogin\(\)/);
+ assert.match(app,/await forgetAuthKey\(\)/);
+ assert.doesNotMatch(app,/savedAuthKey\(\)|rememberAuthKey\(/);
+ assert.match(cloud,/localStorage\.removeItem\(STORE\)/);
+ assert.doesNotMatch(cloud,/localStorage\.setItem\(STORE/);
 });
 
 
@@ -502,8 +515,8 @@ test('overview back-to-top button is accessible, scroll-aware and works on iPad'
   assert.match(css,/\.overview-to-top\[hidden\]\{display:none\}/);
   assert.match(css,/safe-area-inset-bottom/);
   assert.match(css,/@media\(max-width:700px\)/);
-  assert.match(source('index.html'),/js\/app.js\?v=cloud-v1/);
-  assert.match(source('service-worker.js'),/sunbeam-art-offline-v26/);
+  assert.match(source('index.html'),/js\/app.js\?v=private-auth-v2/);
+  assert.match(source('service-worker.js'),/sunbeam-art-offline-v27/);
 });
 
 test('screen transitions preserve immediate rendering and guide-step controls', () => {
@@ -573,7 +586,7 @@ test('all screens load accessible lightweight motion assets without changing pri
   assert.match(css,/::view-transition-old\(sunbeam-page\)/);
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/\.dialog-backdrop/);
-  assert.match(sw,/sunbeam-art-offline-v26/);
+  assert.match(sw,/sunbeam-art-offline-v27/);
   assert.match(sw,/\.\/js\/motion\.js/);
   assert.match(sw,/\.\/css\/motion\.css/);
 });
@@ -741,4 +754,40 @@ test('Supabase integration uses a publishable key, scoped RLS and offline-first 
   assert.match(cloud,/resolution=merge-duplicates/);
   assert.match(app,/cloud\.schedule\(activeId\)/);
   assert.match(storage,/setProgressUser/);
+  assert.match(source('js/keyring.js'),/PBKDF2/);
+  assert.match(source('js/cloud.js'),/sunbeam_keyrings/);
+  assert.match(source('js/views.js'),/Sign in to my hive/);
+});
+
+
+test('approved account encryption migration safely wraps the old guide key', async () => {
+ const window={};
+ const context={window,crypto:webcrypto,TextEncoder,TextDecoder,Uint8Array,atob,btoa};
+ const bytes=Uint8Array.from({length:16},(_,i)=>i+1);
+ const base64=data=>btoa(String.fromCharCode(...data));
+ const oldPassword='test-only-original-password';
+ const accountPassword='test-only-new-account-password';
+ const uuid='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+ const salt=webcrypto.getRandomValues(new Uint8Array(16));
+ const iv=webcrypto.getRandomValues(new Uint8Array(12));
+ const input=await webcrypto.subtle.importKey('raw',new TextEncoder().encode(oldPassword),'PBKDF2',false,['deriveKey']);
+ const oldKey=await webcrypto.subtle.deriveKey({
+   name:'PBKDF2',salt,iterations:1000,hash:'SHA-256'
+ },input,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+ const wrapped=await webcrypto.subtle.encrypt({
+   name:'AES-GCM',iv,additionalData:new TextEncoder().encode('sunbeam-art-auth-v1')
+ },oldKey,bytes);
+ window.SUNBEAM_AUTH_CONFIG={salt:base64(salt),iterations:1000,iv:base64(iv),wrappedKey:base64(new Uint8Array(wrapped))};
+ runInNewContext(source('js/crypto.js'),context);
+ runInNewContext(source('js/keyring.js'),context);
+ const escrow=window.SunbeamKeyring;
+ await assert.rejects(escrow.enroll(accountPassword,'incorrect-old-password',uuid));
+ const original=await escrow.enroll(accountPassword,oldPassword,uuid);
+ assert.equal(original.envelope.version,'1');
+ assert.ok(original.envelope.ciphertext);
+ assert.doesNotMatch(JSON.stringify(original.envelope),/test-only-original-password|test-only-new-account-password/);
+ const unlocked=await escrow.unlock(original.envelope,accountPassword,uuid);
+ await window.SunbeamCrypto.unwrapPrivatePatternKey(unlocked);
+ await assert.rejects(escrow.unlock(original.envelope,'wrong-account-password',uuid));
+ await assert.rejects(escrow.unlock(original.envelope,accountPassword,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'));
 });

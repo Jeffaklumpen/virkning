@@ -11,7 +11,8 @@
   const dispatch=()=>document.dispatchEvent(new Event('sunbeam-cloud-status'));
   const setStatus=value=>{syncStatus=value;dispatch()};
   function state(){
-    return {connected:!!member,email:session?.user?.email||'',role:member?.role||'',
+    return {connected:!!member,userId:member?.user_id||'',
+      name:member?.display_name||'',email:session?.user?.email||'',role:member?.role||'',
       status:syncStatus};
   }
   function cacheSession(){
