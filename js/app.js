@@ -14,6 +14,8 @@
   const {render: swapView} = window.SunbeamMotion;
   const cloud=window.SunbeamCloud;
   const keyring=window.SunbeamKeyring;
+  const custom=window.SunbeamCustomPatterns;
+  const importer=window.SunbeamPdfImporter;
   function persist() {
     progress.updatedAt = new Date().toISOString();
     persistProgress(activeId, progress);
@@ -49,13 +51,15 @@
     const key=await unwrapPrivatePatternKey(loginKey);
     setGuideKey(key);
     setProgressUser(member.user_id,member.role==='owner');
-    const [entries,localIds,previews]=await Promise.all([
-      window.SunbeamGuides.catalog(),listStoredIds(),getPreviews().catch(()=>({}))
+    const [entries,localIds,previews,personal]=await Promise.all([
+      window.SunbeamGuides.catalog(),listStoredIds(),getPreviews().catch(()=>({})),
+      custom.list().catch(error=>{toast('Your personal library could not sync. Check your connection.');return []})
     ]);
-    const known=new Set(entries.map(e=>e.id));
+    const known=new Set([...entries,...personal].map(e=>e.id));
     const local=localIds.filter(id=>id!=='donut-kitty'&&!known.has(id))
-      .map(id=>({id,title:id.replace(/-/g,' '),designer:'My pattern',localOnly:true}));
-    patterns=[...entries,...local];loadedPatterns=new Map();
+      .map(id=>({id,title:id.replace(/-/g,' '),designer:'My pattern',localOnly:true,
+        custom:custom.validId(id)}));
+    patterns=[...entries,...personal,...local];loadedPatterns=new Map();
     previewImages=new Map(Object.entries(previews));patternKey=key;authKey=loginKey;
     // Pull remote progress before showing any guide: stale local state must
     // never be written over an existing cloud note at first login.
@@ -90,7 +94,7 @@
     }
   }
   async function signOut(){
-    ++loadingToken;++photoSweepId;closeModal();
+    ++loadingToken;++photoSweepId;closeModal();importer.stop();
     await cloud.disconnect();
     setProgressUser(null);setGuideKey(null);
     patternKey=null;authKey=null;patterns=[];progress={};
@@ -159,6 +163,18 @@
   // Guide loading is shared by clicks and automatic cover-photo hydration.
   async function readAvailableGuide(entry){
     let guide=null;
+    if(entry.custom){
+      try{
+        guide=await custom.load(entry.id);
+        if(window.SunbeamPatterns.validPattern(guide))
+          await storeGuide(guide).catch(()=>{});
+      }catch(error){
+        try{guide=await getGuide(entry.id)}catch{}
+      }
+      if(!window.SunbeamPatterns.validPattern(guide))
+        throw Error('Your personal guide is unavailable. Please reconnect to the internet.');
+      return guide;
+    }
     try { guide=await getGuide(entry.id) } catch(error) {
       // Older on-device copies can be corrupt after a legacy encryption upgrade.
       // Bundled guides can be re-downloaded without changing progress.
@@ -259,6 +275,30 @@
       toast('Could not open this guide. Check your connection or saved offline copy.');
     }
   }
+  function startPdfImport(existing=null){
+    if(!authKey||!cloud.state().connected)return renderLogin();
+    loadingToken++;
+    importer.start(el,{
+      onCancel:()=>renderLibrary(),
+      onSaved:async guide=>{
+        loadedPatterns.set(guide.id,guide);
+        // Save an AES-GCM-encrypted device copy as well, so revisiting is fast.
+        await storeGuide(guide).catch(()=>{});
+        const preview=await window.SunbeamPreviews.create(guide).catch(()=>null);
+        if(preview){previewImages.set(guide.id,preview);await storePreview(guide.id,preview).catch(()=>{})}
+        const meta={id:guide.id,title:guide.title,designer:guide.designer,
+          category:guide.category,difficulty:guide.difficulty,size:guide.size,
+          images:preview?{cover:preview}:{},custom:true};
+        patterns=patterns.filter(p=>p.id!==guide.id).concat(meta);
+        renderLibrary();
+        toast('Your guide is saved in your private library ♡');
+      }
+    },existing);
+  }
+  async function editPersonalPattern(){
+    const guide=getPattern();if(!guide?.custom)return;
+    startPdfImport(guide);
+  }
   function closeModal(){modal.innerHTML='';document.body.style.overflow=''}
   // Give dialog controls their own click listeners. Do not rely on document-level
   // delegation, since overlays or earlier handlers can swallow those clicks.
@@ -281,7 +321,7 @@
   function showDictionary(){const p=getPattern();let dict=p?.dictionary||{sc:'Single crochet (US terms)',inc:'Increase (2 sc in one stitch)',dec:'Decrease (2 stitches joined into 1)',slst:'Slip stitch',ch:'Chain',FO:'Fasten off',BLO:'Back loops only',FLO:'Front loops only',bo:'Bobble stitch',hdc:'Half double crochet',dc:'Double crochet',htr:'Half treble crochet'};showModal(`<div class="dialog-head"><div><span class="kicker">little helper</span><h2>Stitch dictionary ✿</h2></div><button class="x-btn" data-action="close-modal" aria-label="Close">×</button></div><p>Quick reminders for the abbreviations in this pattern (US terminology).</p><div class="dictionary">${Object.entries(dict).map(([k,v])=>`<div class="dict-item"><b>${esc(k)}</b> ${esc(v)}</div>`).join('')}</div><button class="btn btn-primary" data-action="close-modal">Back to crocheting ♡</button>`)}
   function showZoom(key){const p=getPattern(),src=picture(p,key);if(!src)return;modal.innerHTML=`<div class="dialog-backdrop zoom-backdrop" data-action="close-modal"><button class="x-btn" style="position:absolute;right:20px;top:20px" data-action="close-modal" aria-label="Close">×</button><img class="dialog-img" src="${src}" alt="Enlarged crochet reference photograph"></div>`;document.body.style.overflow='hidden';bindModalControls()}
   function resetConfirm(){const p=getPattern();if(!p)return;showModal(`<div class="dialog-head"><div><span class="kicker">fresh beginning?</span><h2>Restart ${esc(p.title)}?</h2></div><button type="button" class="x-btn" data-action="close-modal" aria-label="Close restart dialog">×</button></div><p>All completed-step checkmarks for this pattern will be cleared. This cannot be undone.</p><button type="button" class="btn btn-primary" data-action="confirm-reset">Yes, start again</button><button type="button" class="btn btn-secondary" data-action="close-modal">Keep my progress</button>`)}
-  async function handleAction(button){const action=button.dataset.action;switch(action){case 'sign-out':void signOut();break;case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id,overviewOpen?'back':'forward');break;case 'overview':renderOverview();break;case 'overview-top':if(overviewOpen)window.scrollTo({top:0,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;case 'back-to-guide':returnToGuide();break;case 'overview-section':{if(!overviewOpen)break;const section=document.getElementById('overview-group-'+button.dataset.id);section?.scrollIntoView({behavior:'smooth',block:'start'});break}case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
+  async function handleAction(button){const action=button.dataset.action;switch(action){case 'import-pdf':startPdfImport();break;case 'edit-custom':void editPersonalPattern();break;case 'sign-out':void signOut();break;case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id,overviewOpen?'back':'forward');break;case 'overview':renderOverview();break;case 'overview-top':if(overviewOpen)window.scrollTo({top:0,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;case 'back-to-guide':returnToGuide();break;case 'overview-section':{if(!overviewOpen)break;const section=document.getElementById('overview-group-'+button.dataset.id);section?.scrollIntoView({behavior:'smooth',block:'start'});break}case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
   document.addEventListener('click',e=>{const t=e.target.closest('[data-action]');if(!t)return; if(t.classList.contains('dialog-backdrop')&&e.target!==t)return; e.preventDefault();handleAction(t)});
   // Keep typing smooth on iPad. Save in local storage on every edit, while
   // the existing cloud sync uploads after a short pause in typing.

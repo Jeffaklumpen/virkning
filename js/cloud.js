@@ -170,5 +170,24 @@
   window.addEventListener('online',()=>{
     if(member&&knownIds.length)void syncAll(knownIds);
   });
-  window.SunbeamCloud=Object.freeze({state,login,requireFreshLogin,readKeyring,saveKeyring,disconnect,syncAll,schedule});
+  // The PDF itself is never passed here. Custom guides use JSON, and their
+  // individually selected page/crop images use binary Storage requests.
+  async function authenticatedFetch(path,options={}){
+    if(!/^\/(rest\/v1\/sunbeam_custom_patterns|storage\/v1\/object\/)/.test(path))
+      throw Error('Unsupported private resource');
+    const perform=async()=>{
+      const headers={apikey:config.publishableKey,Authorization:'Bearer '+await accessToken(),
+        ...(options.headers||{})};
+      return fetch(config.url+path,{method:options.method||'GET',
+        headers,body:options.body});
+    };
+    let response=await perform();
+    if(response.status===401){await renew();response=await perform()}
+    if(!response.ok){
+      const data=await response.json().catch(()=>null);
+      throw Error(data?.message||data?.error||'Private storage request failed ('+response.status+')');
+    }
+    return response;
+  }
+  window.SunbeamCloud=Object.freeze({state,login,requireFreshLogin,readKeyring,saveKeyring,disconnect,syncAll,schedule,authenticatedFetch});
 })();

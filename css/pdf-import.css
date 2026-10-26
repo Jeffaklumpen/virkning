@@ -1,0 +1,93 @@
+/* Sunbeam PDF importer/editor — warm, touch-friendly, consistent with the hive. */
+.import-page{max-width:1180px;margin:0 auto 80px}
+.import-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:6px 0 26px}
+.import-private{font-size:12px;font-weight:850;color:#9b855d;background:#fff3db;border:1px solid #f2dfb9;border-radius:999px;padding:8px 13px}
+.import-welcome{max-width:750px;margin:15px auto 60px;padding:40px clamp(22px,6vw,58px);border:1px solid #f2e3c9;border-radius:30px;text-align:center;background:linear-gradient(145deg,#fffdf9,#fff8e9);box-shadow:var(--shadow)}
+.import-welcome h1,.import-editor-header h1{font-size:clamp(28px,4.4vw,44px);letter-spacing:-1.6px;line-height:1.13;margin:15px 0 12px}
+.import-welcome h1 em,.import-editor-header h1 em{color:#b47e32}
+.import-welcome p,.import-editor-header p{font-size:14px;line-height:1.7;color:#8e7c66}
+.import-drop{display:flex;cursor:pointer;align-items:center;flex-direction:column;justify-content:center;gap:12px;background:#fffefa;border:2px dashed #e4c995;border-radius:22px;padding:30px 18px;margin:27px 0 18px;transition:background .2s,border-color .2s}
+.import-drop:hover,.import-drop:focus-within{background:#fffaed;border-color:#d4a14a}
+.import-drop strong{font-size:18px;color:#6b4e30}
+.import-drop small{font-size:12px;color:#9c8d7b}
+.import-drop input{width:min(330px,100%);font-size:12px;color:#78654d}
+.import-upload-icon{width:58px;height:58px;border-radius:19px;background:#fff0c4;color:#a77a2c;font-size:35px;display:grid;place-items:center}
+.import-welcome .import-privacy{font-size:12px;color:#64846b}
+.import-welcome .import-warning{font-size:12px;background:#fff4de;border-radius:13px;padding:13px;color:#927042}
+.import-status{min-height:23px;margin:15px 0;color:#64846b;font-size:13px;line-height:1.5;font-weight:800}
+.import-error{color:#ad494e}
+.import-editor-header{display:flex;justify-content:space-between;gap:20px;align-items:center;margin:8px 0 28px}
+.import-editor-header h1{margin:10px 0}
+.import-editor-header p{max-width:720px}
+.import-counter{border:1px solid #eee0c8;background:#fffdf7;border-radius:18px;padding:15px 22px;text-align:center;flex:none}
+.import-counter strong{font-size:27px;display:block;color:#bd863b}
+.import-counter small{font-size:11px;color:#968369;white-space:nowrap}
+.import-two-col{display:grid;grid-template-columns:minmax(235px,280px) minmax(0,1fr);align-items:start;gap:24px}
+.import-guide-details{position:sticky;top:22px}
+.import-details-card,.import-group{border:1px solid #f0e1cb;background:#fffefa;border-radius:22px;padding:20px;box-shadow:0 8px 28px rgba(111,79,36,.035)}
+.import-details-card h2{font-size:18px;margin:0 0 18px}
+.import-label{display:block;font-size:12px;font-weight:850;color:#775c44;margin:12px 0 6px}
+.import-label input,.import-label textarea,.import-label select,.import-step-image-tools select,.import-group-title{
+  display:block;width:100%;max-width:100%;box-sizing:border-box;margin:6px 0 0;
+  background:#fff;border:1px solid #e8d8bd;border-radius:12px;padding:11px 12px;
+  color:#514031;font:500 14px/1.5 inherit;font-family:inherit
+}
+.import-label textarea{resize:vertical;min-height:95px;line-height:1.58}
+.import-label input:focus,.import-label textarea:focus,.import-label select:focus,.import-group-title:focus,
+.import-step-image-tools select:focus{outline:2px solid #d5a650;outline-offset:2px}
+.import-cover-preview{width:100%;max-height:210px;object-fit:contain;background:#fff9ed;border:1px solid #eee1c9;border-radius:13px;margin-top:14px}
+.import-editor-hint{font-size:12px;line-height:1.6;color:#95816a;margin:14px 0 0}
+.import-group-list{display:flex;flex-direction:column;gap:22px;min-width:0}
+.import-group{padding:19px}
+.import-group-header{display:flex;gap:12px;align-items:center;margin-bottom:17px}
+.import-group-index{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;flex:none;background:#faeabf;color:#9c7130;font-weight:900}
+.import-group-title{font-weight:900;margin:0;font-size:16px;flex:1;min-width:0}
+.import-compact-actions{display:flex;align-items:center;gap:5px;flex:none}
+.import-compact-actions button{border:1px solid #f0e1c9;border-radius:10px;background:#fff8eb;color:#866743;width:35px;height:35px;font-size:17px;font-weight:900;cursor:pointer}
+.import-compact-actions button:disabled{opacity:.3;cursor:default}
+.import-step-list{display:flex;flex-direction:column;gap:15px}
+.import-step{padding:17px;border:1px solid #f1e8d9;border-radius:18px;background:#fffdfa}
+.import-step-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.import-step-number{color:#c38a49;font-size:12px;font-weight:900}
+.import-step-image-row{display:grid;grid-template-columns:126px 1fr;gap:14px;align-items:start;margin-top:15px;padding:12px;background:#fff9ee;border-radius:13px}
+.import-step-image-row img{width:126px;height:140px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid #eee1ca}
+.import-no-image{width:126px;height:140px;display:grid;place-items:center;text-align:center;background:#fff;border:1px dashed #e6d6bc;border-radius:10px;font-size:12px;color:#ae9778}
+.import-step-image-tools{display:flex;flex-direction:column;gap:9px;min-width:0}
+.import-step-image-tools label{font-size:11px;font-weight:850;color:#8d755d}
+.import-step-image-tools select{font-size:12px;margin:5px 0 0;padding:8px}
+.import-step-image-tools .btn{align-self:flex-start;font-size:12px;padding:9px 13px}
+.import-add-step,.import-add-group{border:1.5px dashed #dbbd91;color:#a1743d;background:#fff9ec;border-radius:12px;padding:13px 17px;font-size:13px;font-weight:900;cursor:pointer;width:100%;margin-top:14px}
+.import-add-group{padding:18px;font-size:14px;margin-top:0}
+.import-save-bar{position:sticky;bottom:0;z-index:5;margin:32px 0 0;padding:16px 20px;border:1px solid #edd9b6;border-radius:17px;background:rgba(255,252,244,.97);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:space-between;gap:18px;box-shadow:0 -6px 25px rgba(105,74,39,.07)}
+.import-save-bar>span{font-size:12px;color:#93795a}
+.import-save-bar>div{display:flex;gap:9px}
+.import-crop-backdrop{position:fixed;z-index:2000;inset:0;background:rgba(35,32,30,.8);display:grid;place-items:center;padding:20px}
+.import-crop-dialog{background:#fffbf2;border-radius:20px;padding:22px;max-width:min(900px,96vw);max-height:95vh;overflow:auto;text-align:center;box-shadow:0 20px 60px #0005}
+.import-crop-dialog h2{margin:0 0 5px;font-size:22px}
+.import-crop-dialog p{color:#90795e;font-size:13px}
+#import-crop-canvas{display:block;max-width:100%;max-height:65vh;border-radius:9px;border:1px solid #dbc5a4;touch-action:none;cursor:crosshair;margin:15px auto}
+.import-crop-actions{display:flex;justify-content:center;gap:10px}
+@media(max-width:850px){
+  .import-two-col{grid-template-columns:1fr}
+  .import-guide-details{position:static}
+  .import-details-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 13px}
+  .import-details-card h2,.import-details-card .import-cover-preview,.import-details-card .import-editor-hint{grid-column:1/-1}
+}
+@media(max-width:600px){
+  .import-welcome{padding:28px 17px;border-radius:22px}
+  .import-private{font-size:11px;padding:7px 10px}
+  .import-editor-header{align-items:start}
+  .import-counter{padding:11px 12px}
+  .import-counter strong{font-size:22px}
+  .import-group{padding:13px}
+  .import-group-title{font-size:15px}
+  .import-group-header{gap:7px}
+  .import-compact-actions button{width:31px;height:34px}
+  .import-step{padding:12px}
+  .import-step-image-row{grid-template-columns:85px 1fr;gap:10px;padding:8px}
+  .import-step-image-row img,.import-no-image{width:85px;height:111px}
+  .import-save-bar{border-radius:0;margin-left:-14px;margin-right:-14px;bottom:0;flex-direction:column;align-items:stretch;padding:12px 15px}
+  .import-save-bar>div{display:grid;grid-template-columns:1fr 2fr}
+  .import-details-card{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){.import-drop{transition:none}}

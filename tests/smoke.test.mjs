@@ -518,8 +518,8 @@ test('overview back-to-top button is accessible, scroll-aware and works on iPad'
   assert.match(css,/\.overview-to-top\[hidden\]\{display:none\}/);
   assert.match(css,/safe-area-inset-bottom/);
   assert.match(css,/@media\(max-width:700px\)/);
-  assert.match(source('index.html'),/js\/app.js\?v=pattern-notes-v1/);
-  assert.match(source('service-worker.js'),/sunbeam-art-offline-v29/);
+  assert.match(source('index.html'),/js\/app.js\?v=pdf-import-v1/);
+  assert.match(source('service-worker.js'),/sunbeam-art-offline-v30/);
 });
 
 test('screen transitions preserve immediate rendering and guide-step controls', () => {
@@ -589,7 +589,7 @@ test('all screens load accessible lightweight motion assets without changing pri
   assert.match(css,/::view-transition-old\(sunbeam-page\)/);
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/\.dialog-backdrop/);
-  assert.match(sw,/sunbeam-art-offline-v29/);
+  assert.match(sw,/sunbeam-art-offline-v30/);
   assert.match(sw,/\.\/js\/motion\.js/);
   assert.match(sw,/\.\/css\/motion\.css/);
 });
@@ -840,4 +840,98 @@ test('the upper-right decorative sparkle is removed without touching the bee', (
   const css=source('css/theme.css');
   assert.match(css,/\.hero::before\s*\{\s*content:none;\s*display:none/);
   assert.match(css,/\.hero-bee\s*\{/);
+});
+
+
+test('PDF importer drafts sections and rounds without storing or uploading the original PDF', () => {
+  const {window}=sandbox();
+  const context={window,crypto:webcrypto,atob,btoa,Uint8Array};
+  runInNewContext(source('js/pdf-import.js'),context);
+  const importer=window.SunbeamPdfImporter;
+  const lines=importer.linesFromText([
+    {str:'Round 1: 6 sc in MR',transform:[1,0,0,1,12,80]},
+    {str:'Round 2: inc x6',transform:[1,0,0,1,12,60]}
+  ]);
+  assert.deepEqual(Array.from(lines),['Round 1: 6 sc in MR','Round 2: inc x6']);
+  const guide=importer.parsePages([
+    {number:1,lines:['BODY','Round 1: 6 sc in MR','Round 2: inc x6','Round 3: 12 sc'],
+      image:'data:image/webp;base64,AAAA'},
+    {number:2,lines:[],image:'data:image/webp;base64,BBBB'}
+  ],'Little Fox.pdf');
+  assert.equal(guide.title,'Little Fox');
+  assert.equal(guide.groups.length,2);
+  assert.equal(guide.groups[0].title,'Body');
+  assert.equal(guide.groups[0].steps.length,3);
+  assert.equal(guide.groups[1].steps.length,1);
+  assert.equal(guide.groups[1].steps[0].image,'page-2');
+  assert.equal(guide.cover,'page-1');
+  assert.equal(guide.images['page-1'],'data:image/webp;base64,AAAA');
+  assert.equal(Object.hasOwn(guide,'pdf'),false);
+  assert.equal(Object.hasOwn(guide,'file'),false);
+  assert.match(source('js/pdf-import.js'),/file\.arrayBuffer\(\)/);
+  assert.doesNotMatch(source('js/pdf-import.js'),/storage\.setItem\(|storeGuide\(/);
+});
+
+test('saving a custom pattern stores a structured guide and only referenced images', async () => {
+  const {window}=sandbox();
+  const requests=[];
+  const user='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  window.SunbeamCloud={
+    state:()=>({connected:true,userId:user}),
+    authenticatedFetch:async (path,options={})=>{
+      requests.push({path,options});
+      return {json:async()=>[],blob:async()=>new Blob([])};
+    }
+  };
+  runInNewContext(source('js/custom-patterns.js'),{
+    window,crypto:webcrypto,atob,Uint8Array,FileReader:function(){}
+  });
+  const guide={
+    title:'My very own Fox',designer:'Kimsi',category:'Amigurumi',
+    cover:'page-1',images:{
+      'page-1':'data:image/webp;base64,AAAA',
+      'page-2':'data:image/webp;base64,BBBB',
+      'page-3':'data:image/webp;base64,CCCC'
+    },groups:[{id:'body',title:'Body',steps:[
+      {id:'r1',title:'Round 1',instruction:'6 sc in MR',image:'page-2'}
+    ]}]
+  };
+  const saved=await window.SunbeamCustomPatterns.save(guide);
+  assert.ok(window.SunbeamCustomPatterns.validId(saved.id));
+  assert.equal(saved.groups.length,1);
+  assert.equal(saved.groups[0].steps[0].instruction,'6 sc in MR');
+  const imageUploads=requests.filter(r=>r.path.includes('/storage/v1/object/'));
+  assert.equal(imageUploads.length,2,'only the cover and the actually used step image are uploaded');
+  assert.ok(imageUploads.every(r=>r.options.headers['Content-Type']==='image/webp'));
+  const rowReq=requests.find(r=>r.path.includes('sunbeam_custom_patterns'));
+  const row=JSON.parse(rowReq.options.body);
+  assert.equal(row.payload.title,'My very own Fox');
+  assert.equal(row.payload.designer,'Kimsi');
+  assert.equal(Object.hasOwn(row.payload,'images'),false);
+  assert.equal(Object.hasOwn(row.payload,'pdf'),false);
+  assert.deepEqual(Object.keys(row.payload.imagePaths).sort(),['page-1','page-2']);
+  assert.ok(rowReq.path.includes('on_conflict=user_id,id'));
+});
+
+test('new PDF import is attached to the existing private Sunbeam guide renderer', () => {
+  const app=source('js/app.js');
+  const views=source('js/views.js');
+  const html=source('index.html');
+  const sw=source('service-worker.js');
+  const importer=source('js/pdf-import.js');
+  assert.match(views,/data-action="import-pdf"/);
+  assert.match(views,/data-action="edit-custom"/);
+  assert.match(app,/case 'import-pdf':startPdfImport/);
+  assert.match(app,/case 'edit-custom':void editPersonalPattern/);
+  assert.match(app,/custom\.list\(\)/);
+  assert.match(app,/custom\.load\(entry\.id\)/);
+  assert.match(importer,/data-import-action="save"/);
+  assert.match(importer,/data-import-action="step-up"/);
+  assert.match(importer,/data-field="move-section"/);
+  for(const path of ['js/custom-patterns.js','js/pdf-import.js','css/pdf-import.css']){
+    assert.ok(html.includes(path),'new asset is referenced in HTML: '+path);
+    assert.ok(sw.includes(path),'new asset is cached in offline shell: '+path);
+  }
+  assert.match(html,/https:\/\/cdnjs\.cloudflare\.com/);
+  assert.match(sw,/sunbeam-art-offline-v30/);
 });
