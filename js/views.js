@@ -32,17 +32,18 @@
     return `<details class="pattern-notes" id="pattern-notes-card">
       <summary class="pattern-notes-summary">
         <span class="pattern-notes-badge" aria-hidden="true">✎</span>
-        <span class="pattern-notes-heading"><strong>My pattern notes</strong>
-          <small>${preview?esc(preview)+(note.trim().length>90?'…':''):'Yarn, hook size, changes and little things to remember'}</small>
-        </span><span class="pattern-notes-count">${note.trim()?'Note saved':'Add a note'}</span>
+        <span class="pattern-notes-heading"><strong>My yarn & notes</strong>
+          <small>${preview?esc(preview)+(note.trim().length>90?'…':''):'Keep track of yarns, colors, hook sizes and little reminders'}</small>
+        </span><span class="pattern-notes-count">${Array.isArray(progress?.yarns)&&progress.yarns.length?progress.yarns.length+' yarns saved':note.trim()?'Note saved':'Add yarn or a note'}</span>
         <span class="pattern-notes-chevron" aria-hidden="true">⌄</span>
       </summary>
       <div class="pattern-notes-content">
-        <label for="pattern-notes-input">Your notes for this whole pattern</label>
+        <section id="pattern-yarn-widget" class="yarn-journal" aria-label="Yarns used in this pattern"></section>
+        <div class="pattern-note-editor"><label for="pattern-notes-input">Your notes for this whole pattern</label>
         <textarea id="pattern-notes-input" rows="4" maxlength="5000" spellcheck="true" placeholder="e.g. Yarn: cotton, 4 mm hook. Used a different colour for the ears…">${esc(note)}</textarea>
         <div class="pattern-notes-footer"><span class="pattern-notes-help">Just for you ♡ · Up to 5,000 characters</span>
           <div class="pattern-notes-save-actions"><span class="pattern-notes-save-status" id="pattern-notes-save-status" role="status">Saved</span>
-            <button type="button" class="btn btn-primary pattern-notes-save-button" id="pattern-notes-save" data-action="save-pattern-notes" disabled>Save note</button></div></div>
+            <button type="button" class="btn btn-primary pattern-notes-save-button" id="pattern-notes-save" data-action="save-pattern-notes" disabled>Save note</button></div></div></div>
       </div>
     </details>`;
   }

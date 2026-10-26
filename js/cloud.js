@@ -203,5 +203,14 @@
   window.addEventListener('online',()=>{
     if(member&&knownIds.length)void syncAll(knownIds);
   });
-  window.SunbeamCloud=Object.freeze({state,login,restore,readKeyring,saveKeyring,disconnect,syncAll,schedule});
+  async function yarnLookup(params){
+    if(!member)throw Error('Sign in to search yarns');
+    const query=new URLSearchParams();
+    query.set('type',params.type==='colors'?'colors':'catalog');
+    if(params.type==='colors'){
+      query.set('brand',params.brand);query.set('yarn',params.yarn);
+    }
+    return request('/functions/v1/sunbeam-yarns?'+query.toString());
+  }
+  window.SunbeamCloud=Object.freeze({state,login,restore,readKeyring,saveKeyring,disconnect,syncAll,schedule,yarnLookup});
 })();

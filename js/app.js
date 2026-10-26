@@ -5,7 +5,7 @@
   const el=$('#app');
   const modal=$('#modal-root');
   let patterns=[], loadedPatterns=new Map(), activeId=null, activeStep=null, activeGroup=null, progress={}, authKey=null, patternKey=null, loadingToken=0, previewImages=new Map(), photoSweepId=0, overviewOpen=false;
-  const noteDrafts=new Map();
+  const noteDrafts=new Map(),openJournals=new Set();
   const {esc, icon, picture, validPattern, stepsFor, groupSteps, stats} = window.SunbeamPatterns;
   const {baseProgress, loadProgress, persistProgress, setGuideKey,
     getGuide, listStoredIds, storeGuide, storePreview, getPreviews, forgetAuthKey,
@@ -121,7 +121,7 @@
     await cloud.disconnect();
     setProgressUser(null);setGuideKey(null);
     patternKey=null;authKey=null;patterns=[];progress={};
-    noteDrafts.clear();loadedPatterns.clear();previewImages.clear();
+    noteDrafts.clear();openJournals.clear();loadedPatterns.clear();previewImages.clear();
     try{await forgetAuthKey()}catch{}
     renderLogin();
   }
@@ -154,6 +154,19 @@
       document.getElementById('chapter-select')?.addEventListener('change',e=>jumpGroup(e.target.value));
       const notesInput=el.querySelector('#pattern-notes-input');
       if(notesInput&&noteDrafts.has(activeId))notesInput.value=noteDrafts.get(activeId);
+      const journal=el.querySelector('#pattern-notes-card');
+      if(journal&&openJournals.has(activeId))journal.open=true;
+      const patternId=activeId;
+      window.SunbeamYarnUI.mount(el.querySelector('#pattern-yarn-widget'),{
+        items:progress.yarns,
+        isActive:()=>activeId===patternId&&!!authKey,
+        onSave:items=>{
+          if(!authKey||activeId!==patternId)return;
+          progress.yarns=items;
+          persist();
+          toast('Yarn saved to this pattern ♡');
+        }
+      });
       updateNotesStatus();
     }
   });
@@ -310,7 +323,7 @@
   function showDictionary(){const p=getPattern();let dict=p?.dictionary||{sc:'Single crochet (US terms)',inc:'Increase (2 sc in one stitch)',dec:'Decrease (2 stitches joined into 1)',slst:'Slip stitch',ch:'Chain',FO:'Fasten off',BLO:'Back loops only',FLO:'Front loops only',bo:'Bobble stitch',hdc:'Half double crochet',dc:'Double crochet',htr:'Half treble crochet'};showModal(`<div class="dialog-head"><div><span class="kicker">little helper</span><h2>Stitch dictionary ✿</h2></div><button class="x-btn" data-action="close-modal" aria-label="Close">×</button></div><p>Quick reminders for the abbreviations in this pattern (US terminology).</p><div class="dictionary">${Object.entries(dict).map(([k,v])=>`<div class="dict-item"><b>${esc(k)}</b> ${esc(v)}</div>`).join('')}</div><button class="btn btn-primary" data-action="close-modal">Back to crocheting ♡</button>`)}
   function showZoom(key){const p=getPattern(),src=picture(p,key);if(!src)return;modal.innerHTML=`<div class="dialog-backdrop zoom-backdrop" data-action="close-modal"><button class="x-btn" style="position:absolute;right:20px;top:20px" data-action="close-modal" aria-label="Close">×</button><img class="dialog-img" src="${src}" alt="Enlarged crochet reference photograph"></div>`;document.body.style.overflow='hidden';bindModalControls()}
   function resetConfirm(){const p=getPattern();if(!p)return;showModal(`<div class="dialog-head"><div><span class="kicker">fresh beginning?</span><h2>Restart ${esc(p.title)}?</h2></div><button type="button" class="x-btn" data-action="close-modal" aria-label="Close restart dialog">×</button></div><p>All completed-step checkmarks for this pattern will be cleared. This cannot be undone.</p><button type="button" class="btn btn-primary" data-action="confirm-reset">Yes, start again</button><button type="button" class="btn btn-secondary" data-action="close-modal">Keep my progress</button>`)}
-  async function handleAction(button){const action=button.dataset.action;switch(action){case 'save-pattern-notes':savePatternNotes();break;case 'sign-out':void signOut();break;case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id,overviewOpen?'back':'forward');break;case 'overview':renderOverview();break;case 'overview-top':if(overviewOpen)window.scrollTo({top:0,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;case 'back-to-guide':returnToGuide();break;case 'overview-section':{if(!overviewOpen)break;const section=document.getElementById('overview-group-'+button.dataset.id);section?.scrollIntoView({behavior:'smooth',block:'start'});break}case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress=baseProgress();persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
+  async function handleAction(button){const action=button.dataset.action;switch(action){case 'save-pattern-notes':savePatternNotes();break;case 'sign-out':void signOut();break;case 'home':closeModal();renderLibrary();break;case 'open':openPattern(button.dataset.id);break;case 'step':renderGuide(button.dataset.id,overviewOpen?'back':'forward');break;case 'overview':renderOverview();break;case 'overview-top':if(overviewOpen)window.scrollTo({top:0,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;case 'back-to-guide':returnToGuide();break;case 'overview-section':{if(!overviewOpen)break;const section=document.getElementById('overview-group-'+button.dataset.id);section?.scrollIntoView({behavior:'smooth',block:'start'});break}case 'group':jumpGroup(button.dataset.id);break;case 'next':jump(1);break;case 'prev':jump(-1);break;case 'variant-option':{const chosen=button.dataset.value,p=getPattern();if(!p?.variants?.some(v=>v.id===chosen))break;progress.variantOption=chosen;persist();renderGuide('choose-style');toast('Pattern style saved ♡');break}case 'ear-option':{progress.earOption=button.dataset.value;persist();renderGuide(activeStep);toast('Your ear method is saved ♡');break}case 'toggle-done':progress.done[activeStep]=!progress.done[activeStep];persist();renderGuide(activeStep);break;case 'dictionary':showDictionary();break;case 'zoom':showZoom(button.dataset.key);break;case 'close-modal':closeModal();break;case 'reset':resetConfirm();break;case 'confirm-reset':progress={...baseProgress(),notes:progress.notes||'',yarns:progress.yarns||[]};persist();activeStep=null;closeModal();renderGuide();toast('A fresh start ♡');break;}}
   document.addEventListener('click',e=>{const t=e.target.closest('[data-action]');if(!t)return; if(t.classList.contains('dialog-backdrop')&&e.target!==t)return; e.preventDefault();handleAction(t)});
   // Keep typing smooth on iPad. Save in local storage on every edit, while
   // the existing cloud sync uploads after a short pause in typing.
@@ -324,6 +337,11 @@
     updateNotesStatus();
   });
   document.addEventListener('change',e=>{const m=e.target.closest('[data-material]');if(m){progress.materials[m.dataset.material]=m.checked;persist();}});
+  el.addEventListener('toggle',event=>{
+    if(event.target?.id!=='pattern-notes-card'||!activeId)return;
+    if(event.target.open)openJournals.add(activeId);
+    else openJournals.delete(activeId);
+  },true);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modal.innerHTML){closeModal();return}if(overviewOpen){returnToGuide();return}closeModal();return}if(overviewOpen||!activeId||modal.innerHTML||['TEXTAREA','INPUT','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='ArrowRight'){e.preventDefault();jump(1)}else if(e.key==='ArrowLeft'){e.preventDefault();jump(-1)}else if(e.key==='Enter' && document.activeElement?.dataset.action==='zoom'){showZoom(document.activeElement.dataset.key)}});
   $('#home-btn').addEventListener('click',()=>authKey?renderLibrary():renderLogin());
   async function init(){

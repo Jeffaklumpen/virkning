@@ -522,8 +522,8 @@ test('overview back-to-top button is accessible, scroll-aware and works on iPad'
   assert.match(css,/\.overview-to-top\[hidden\]\{display:none\}/);
   assert.match(css,/safe-area-inset-bottom/);
   assert.match(css,/@media\(max-width:700px\)/);
-  assert.match(source('index.html'),/js\/app.js\?v=remembered-session-v1/);
-  assert.match(source('service-worker.js'),/sunbeam-art-offline-v30/);
+  assert.match(source('index.html'),/js\/app.js\?v=colorways-v1/);
+  assert.match(source('service-worker.js'),/sunbeam-art-offline-v31/);
 });
 
 test('screen transitions preserve immediate rendering and guide-step controls', () => {
@@ -593,7 +593,7 @@ test('all screens load accessible lightweight motion assets without changing pri
   assert.match(css,/::view-transition-old\(sunbeam-page\)/);
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/\.dialog-backdrop/);
-  assert.match(sw,/sunbeam-art-offline-v30/);
+  assert.match(sw,/sunbeam-art-offline-v31/);
   assert.match(sw,/\.\/js\/motion\.js/);
   assert.match(sw,/\.\/css\/motion\.css/);
 });
@@ -828,7 +828,7 @@ test('pattern notes are personal, safely rendered, and included in synced progre
   assert.match(guide,/Yarn: cotton, hook 4 mm/);
   assert.match(guide,/&lt;\/textarea&gt;/);
   assert.doesNotMatch(guide,/<script>alert\(1\)<\/script>/);
-  assert.match(guide,/My pattern notes/);
+  assert.match(guide,/My yarn & notes/);
   assert.match(guide,/maxlength="5000"/);
   const app=source('js/app.js');
   assert.match(guide,/id="pattern-notes-save"/);
@@ -921,4 +921,76 @@ test('unsaved note editing has no persistence side effects',()=>{
  const changes=s.slice(start,end);
  assert.match(changes,/noteDrafts\.set\(activeId,value\)/);
  assert.doesNotMatch(changes,/persist\(\)|persistProgress\(|cloud\.schedule\(/);
+});
+
+
+test('Yarn Colorways integration is collapsed into the existing project notes',()=>{
+ const views=source('js/views.js'),app=source('js/app.js'),html=source('index.html');
+ const sw=source('service-worker.js'),storage=source('js/storage.js');
+ assert.match(views,/id="pattern-yarn-widget"/);
+ assert.match(views,/My yarn & notes/);
+ assert.match(views,/<details class="pattern-notes"/);
+ assert.match(app,/SunbeamYarnUI\.mount/);
+ assert.match(app,/progress\.yarns=items;\s*persist\(\)/);
+ assert.match(app,/yarns:progress\.yarns\|\|\[\]/);
+ assert.match(storage,/yarns: \[\]/);
+ assert.match(source('js/cloud.js'),/functions\/v1\/sunbeam-yarns/);
+ for(const file of ['js/yarn-catalog.js','js/yarn-journal.js','css/yarn-journal.css']){
+   assert.ok(html.includes(file),file+' in HTML');
+   assert.ok(sw.includes(file),file+' in offline cache');
+ }
+ assert.match(sw,/sunbeam-art-offline-v31/);
+});
+
+test('API catalog is fetched once then filtered locally, with color data cached separately',async()=>{
+ const {window,indexedDB}=sandbox();
+ let apiCalls=0;
+ window.SunbeamCloud={yarnLookup:async params=>{
+   apiCalls++;
+   if(params.type==='catalog')return {items:[
+     {brandId:'hobbii',brandName:'Hobbii',yarnId:'friends_cotton',yarnName:'Friends Cotton 8/4'},
+     {brandId:'drops',brandName:'DROPS',yarnId:'safran',yarnName:'Safran'}
+   ]};
+   if(params.type==='colors')return {items:[{name:'Peach',hex:'#f4acaa'}]};
+   throw Error('Unknown type');
+ }};
+ runInNewContext(source('js/yarn-catalog.js'),{
+   window,indexedDB,Promise,Map,Date,Error,String,Number
+ });
+ const api=window.SunbeamYarnCatalog;
+ const first=await api.catalog();
+ assert.equal(first.items.length,2);
+ assert.equal(apiCalls,1);
+ assert.equal(api.search(first.items,'hob cot').length,1);
+ assert.equal(api.search(first.items,'drops').length,1);
+ await api.catalog();
+ assert.equal(apiCalls,1,'no API call for subsequent search');
+ const colors=await api.colors('hobbii','friends_cotton');
+ assert.equal(colors.items[0].hex,'#f4acaa');
+ await api.colors('hobbii','friends_cotton');
+ assert.equal(apiCalls,2,'same colorway should be requested only once');
+ await assert.rejects(api.colors('invalid/name','friends_cotton'));
+ assert.equal(apiCalls,2);
+});
+
+test('yarn journal provides add, edit, color choice and explicitly saved quantities',()=>{
+ const src=source('js/yarn-journal.js');
+ const {window}=sandbox();
+ window.SunbeamPatterns={esc:s=>String(s).replaceAll('<','&lt;').replaceAll('"','&quot;')};
+ runInNewContext(src,{window,crypto:webcrypto});
+ const markup=window.SunbeamYarnUI.renderSaved([{
+   brandName:'Hobbii',yarnName:'Friends Cotton',colorName:'Peach',
+   hex:'#f4acaa',quantity:'2 skeins',hook:'3.5 mm',memo:'Ears'
+ }]);
+ assert.match(markup,/Hobbii/);
+ assert.match(markup,/Peach/);
+ assert.match(markup,/2 skeins/);
+ assert.match(markup,/3.5 mm/);
+ assert.match(markup,/data-yarn-action="edit"/);
+ assert.match(markup,/data-yarn-action="remove"/);
+ assert.match(src,/data-yarn-action="save"/);
+ assert.match(src,/function capture\(\)/);
+ assert.match(src,/Only saved when you press the button/);
+ assert.match(src,/CC BY 4\.0/);
+ assert.doesNotMatch(src,/X-RapidAPI-Key|YARN_COLORWAYS_API_KEY/);
 });
