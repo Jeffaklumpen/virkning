@@ -502,8 +502,8 @@ test('overview back-to-top button is accessible, scroll-aware and works on iPad'
   assert.match(css,/\.overview-to-top\[hidden\]\{display:none\}/);
   assert.match(css,/safe-area-inset-bottom/);
   assert.match(css,/@media\(max-width:700px\)/);
-  assert.match(source('index.html'),/js\/app.js\?v=motion-v1/);
-  assert.match(source('service-worker.js'),/sunbeam-art-offline-v25/);
+  assert.match(source('index.html'),/js\/app.js\?v=cloud-v1/);
+  assert.match(source('service-worker.js'),/sunbeam-art-offline-v26/);
 });
 
 test('screen transitions preserve immediate rendering and guide-step controls', () => {
@@ -573,7 +573,7 @@ test('all screens load accessible lightweight motion assets without changing pri
   assert.match(css,/::view-transition-old\(sunbeam-page\)/);
   assert.match(css,/prefers-reduced-motion:reduce/);
   assert.match(css,/\.dialog-backdrop/);
-  assert.match(sw,/sunbeam-art-offline-v25/);
+  assert.match(sw,/sunbeam-art-offline-v26/);
   assert.match(sw,/\.\/js\/motion\.js/);
   assert.match(sw,/\.\/css\/motion\.css/);
 });
