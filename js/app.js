@@ -56,9 +56,10 @@
       custom.list().catch(error=>{toast('Your personal library could not sync. Check your connection.');return []})
     ]);
     const known=new Set([...entries,...personal].map(e=>e.id));
-    const local=localIds.filter(id=>id!=='donut-kitty'&&!known.has(id))
-      .map(id=>({id,title:id.replace(/-/g,' '),designer:'My pattern',localOnly:true,
-        custom:custom.validId(id)}));
+    // Personal guides belong to an account: never expose cached private
+    // guides from another user just because they share this device.
+    const local=localIds.filter(id=>id!=='donut-kitty'&&!known.has(id)&&!custom.validId(id))
+      .map(id=>({id,title:id.replace(/-/g,' '),designer:'My pattern',localOnly:true}));
     patterns=[...entries,...personal,...local];loadedPatterns=new Map();
     previewImages=new Map(Object.entries(previews));patternKey=key;authKey=loginKey;
     // Pull remote progress before showing any guide: stale local state must
