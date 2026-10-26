@@ -8,7 +8,7 @@
   // on opening the new login screen; previous pattern unlocks are not reused.
   let session=null,member=null,restoreJob=null,refreshJob=null,knownIds=[];
   let syncStatus='local';
-  const pending=new Map(),running=new Set(),blockedPatterns=new Set(),saveWaiters=new Map();
+  const pending=new Map(),running=new Set();
   const storage=()=>window.SunbeamStorage;
   const dispatch=()=>document.dispatchEvent(new Event('sunbeam-cloud-status'));
   const setStatus=value=>{syncStatus=value;dispatch()};
@@ -109,14 +109,14 @@
     try{if(session?.access_token)await rawRequest('/auth/v1/logout',{
       method:'POST',accessToken:session.access_token,emptyResponse:true})}catch{}
     for(const timer of pending.values())clearTimeout(timer);
-    pending.clear();knownIds=[];blockedPatterns.clear();saveWaiters.clear();reset();
+    pending.clear();knownIds=[];reset();
   }
   function progressPath(){
     return '/rest/v1/sunbeam_progress?select=pattern_id,progress,modified_at&user_id=eq.'+
       encodeURIComponent(session.user.id);
   }
   async function saveOne(id){
-    if(!member||running.has(id)||blockedPatterns.has(id))return;
+    if(!member||running.has(id))return;
     const record=storage().getProgressRecord(id);
     if(!record.present||!record.dirty)return;
     running.add(id);setStatus('saving');
@@ -132,15 +132,12 @@
       setStatus(navigator.onLine?'error':'offline');
     }finally{
       running.delete(id);
-      const waiters=saveWaiters.get(id);
-      if(waiters){saveWaiters.delete(id);waiters.forEach(resolve=>resolve())}
-      if(blockedPatterns.has(id))return;
       const changed=storage().getProgressRecord(id);
       if(changed.dirty&&changed.dirty!==record.dirty)schedule(id);
     }
   }
   function schedule(id){
-    if(!member||blockedPatterns.has(id))return;
+    if(!member)return;
     if(pending.has(id))clearTimeout(pending.get(id));
     setStatus(navigator.onLine?'saving':'offline');
     pending.set(id,setTimeout(()=>{
@@ -158,7 +155,6 @@
       const list=await request(progressPath());
       const cloud=new Map((list||[]).map(row=>[row.pattern_id,row.progress]));
       for(const id of knownIds){
-        if(blockedPatterns.has(id))continue;
         const local=storage().getProgressRecord(id);
         const remote=cloud.get(id);
         // The first migration of old Kimsi data never overwrites an existing cloud copy.
@@ -171,40 +167,8 @@
       if(syncStatus!=='error'&&syncStatus!=='offline')setStatus('synced');
     }catch(error){setStatus(navigator.onLine?'error':'offline')}
   }
-  async function blockPatternSync(id){
-    blockedPatterns.add(id);
-    const timer=pending.get(id);
-    if(timer)clearTimeout(timer);
-    pending.delete(id);
-    knownIds=knownIds.filter(item=>item!==id);
-    // Wait for an already-running upload so it cannot recreate progress after
-    // the permanent deletion request.
-    if(running.has(id))await new Promise(resolve=>{
-      const queue=saveWaiters.get(id)||[];
-      queue.push(resolve);saveWaiters.set(id,queue);
-    });
-  }
   window.addEventListener('online',()=>{
     if(member&&knownIds.length)void syncAll(knownIds);
   });
-  // The PDF itself is never passed here. Custom guides use JSON, and their
-  // individually selected page/crop images use binary Storage requests.
-  async function authenticatedFetch(path,options={}){
-    if(!/^\/(rest\/v1\/(sunbeam_custom_patterns|sunbeam_progress)|storage\/v1\/object\/)/.test(path))
-      throw Error('Unsupported private resource');
-    const perform=async()=>{
-      const headers={apikey:config.publishableKey,Authorization:'Bearer '+await accessToken(),
-        ...(options.headers||{})};
-      return fetch(config.url+path,{method:options.method||'GET',
-        headers,body:options.body});
-    };
-    let response=await perform();
-    if(response.status===401){await renew();response=await perform()}
-    if(!response.ok){
-      const data=await response.json().catch(()=>null);
-      throw Error(data?.message||data?.error||'Private storage request failed ('+response.status+')');
-    }
-    return response;
-  }
-  window.SunbeamCloud=Object.freeze({state,login,requireFreshLogin,readKeyring,saveKeyring,disconnect,syncAll,schedule,authenticatedFetch,blockPatternSync});
+  window.SunbeamCloud=Object.freeze({state,login,requireFreshLogin,readKeyring,saveKeyring,disconnect,syncAll,schedule});
 })();
