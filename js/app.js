@@ -159,6 +159,7 @@
       const patternId=activeId;
       window.SunbeamYarnUI.mount(el.querySelector('#pattern-yarn-widget'),{
         items:progress.yarns,
+        hasSavedNote:!!(progress.notes||'').trim(),
         isActive:()=>activeId===patternId&&!!authKey,
         onSave:items=>{
           if(!authKey||activeId!==patternId)return;

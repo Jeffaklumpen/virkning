@@ -28,7 +28,7 @@
    let operation=0;
    const alive=()=>root.isConnected&&options.isActive();
    const noteCount=()=>{const node=root.closest('.pattern-notes')?.querySelector('.pattern-notes-count');
-     if(node)node.textContent=items.length?items.length+' yarn'+(items.length===1?'':'s')+' saved':'Add yarn or a note'};
+     if(node)node.textContent=items.length?items.length+' yarn'+(items.length===1?'':'s')+' saved':options.hasSavedNote?'Note saved':'Add yarn or a note'};
    function summary(){
      return '<div class="yarn-journal-header"><div class="yarn-journal-title">'+
        '<span class="yarn-ball-icon" aria-hidden="true">◉</span><div><h3>Yarn used</h3>'+
