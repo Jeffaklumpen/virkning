@@ -4,8 +4,9 @@
   'use strict';
   const config=window.SUNBEAM_SUPABASE_CONFIG;
   const STORE='sunbeam-cloud-session-v1';
-  // v2 is intentionally session-only. All previous remembered sessions expire
-  // on opening the new login screen; previous pattern unlocks are not reused.
+  // Keep only the rotating Supabase refresh token and the account ID in
+  // browser storage. A refresh and membership verification are required before
+  // a saved session can be used after reloading the page.
   let session=null,member=null,restoreJob=null,refreshJob=null,knownIds=[];
   let syncStatus='local';
   const pending=new Map(),running=new Set();
@@ -17,12 +18,16 @@
       email:session?.user?.email||'',role:member?.role||'',status:syncStatus};
   }
   function cacheSession(){
-    // Do not persist Supabase refresh tokens; email/password is required anew.
-    localStorage.removeItem(STORE);
+    if(session?.refresh_token && session?.user?.id)
+      localStorage.setItem(STORE,JSON.stringify({
+        refresh_token:session.refresh_token,user_id:session.user.id
+      }));
+    else localStorage.removeItem(STORE);
   }
   function reset(){
     session=null;member=null;restoreJob=null;refreshJob=null;
-    cacheSession();setStatus('local');
+    localStorage.removeItem(STORE);
+    setStatus('local');
   }
   async function rawRequest(path,options={}){
     const headers={'apikey':config.publishableKey,'Accept':'application/json'};
@@ -86,10 +91,38 @@
     cacheSession();setStatus('connecting');
     return member;
   }
-  function requireFreshLogin(){
-    // Force out old cached Supabase sessions and obsolete migration state.
-    localStorage.removeItem(STORE);
-    reset();
+  async function restore(){
+    if(member)return member;
+    if(restoreJob)return restoreJob;
+    restoreJob=(async()=>{
+      let saved;
+      try{saved=JSON.parse(localStorage.getItem(STORE)||'null')}catch{
+        localStorage.removeItem(STORE);return null;
+      }
+      if(!saved?.refresh_token || !/^[0-9a-f-]{36}$/i.test(saved.user_id||'')){
+        localStorage.removeItem(STORE);return null;
+      }
+      try{
+        const refreshed=await rawRequest('/auth/v1/token?grant_type=refresh_token',{
+          method:'POST',body:{refresh_token:saved.refresh_token}
+        });
+        refreshed.expires_at=Math.floor(Date.now()/1000)+Number(refreshed.expires_in||3600);
+        if(refreshed.user?.id!==saved.user_id)
+          throw Error('The saved session belongs to another account.');
+        const approved=await verifyMembership(refreshed);
+        session=refreshed;member=approved;
+        cacheSession();setStatus('connecting');
+        return approved;
+      }catch(error){
+        if(error.status===400||error.status===401||error.status===403||
+          /belongs to another account/.test(error.message)){
+          reset();return null;
+        }
+        // An outage should not silently discard a valid, restorable session.
+        throw error;
+      }
+    })().finally(()=>{restoreJob=null});
+    return restoreJob;
   }
   async function readKeyring(){
     if(!member)throw Error('Sign in first.');
@@ -170,5 +203,5 @@
   window.addEventListener('online',()=>{
     if(member&&knownIds.length)void syncAll(knownIds);
   });
-  window.SunbeamCloud=Object.freeze({state,login,requireFreshLogin,readKeyring,saveKeyring,disconnect,syncAll,schedule});
+  window.SunbeamCloud=Object.freeze({state,login,restore,readKeyring,saveKeyring,disconnect,syncAll,schedule});
 })();

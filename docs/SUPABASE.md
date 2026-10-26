@@ -1,6 +1,6 @@
 # Sunbeam — private Supabase account sign-in
 
-The private PWA requires an approved Supabase Auth email/password account on **every new app opening**. The original single-password login and optional "Connect cloud backup" UI are retired.
+The private PWA requires an approved Supabase Auth email/password account. After signing in once, it remembers the authenticated device across ordinary page refreshes and app restarts. The original single-password login and optional "Connect cloud backup" UI are retired.
 
 ## Project
 
@@ -25,8 +25,10 @@ The encrypted keyring is bound to the **Supabase account password**. If that pas
 
 ## Session and security
 
-- **No remembered sessions**: the app refuses to load the private library without a fresh Supabase sign-in on each app opening, even if an old device had remembered the previous legacy unlock or Supabase session.
-- Old IndexedDB remembered login keys are deleted on new app start; old localStorage cloud tokens are deleted. A Sign out button clears runtime encryption keys and the current Auth session.
+- **Remembered sessions**: a rotating Supabase refresh token and the account ID are saved in browser localStorage, as in Supabase's standard client-side auth pattern. On each load Sunbeam exchanges the refresh token server-side and verifies membership before opening private guides. It never stores the account password.
+- **Remembered encrypted unlock**: the non-extractable AES-GCM CryptoKey obtained after a successful login is structured-cloned into per-account IndexedDB; raw key bytes and the original pattern password are never stored. If this browser does not support CryptoKey persistence, login still works but must be repeated after refresh. Explicit Sign out clears both the refresh token and the cached CryptoKey.
+- Old legacy single-password unlock records are still cleared. This allows the user to reopen the PWA without repeating the Supabase email/password, but a revoked account cannot access private guides using only the stored device key.
+- **Manual pattern notes**: edits stay in memory as a draft until **Save note** is clicked. Only then are they persisted as part of user-scoped progress and synced automatically to Supabase. Other guide progress remains autosaved.
 - The change forces logout **inside the new PWA**, but does not globally invalidate all historic JWTs on Supabase's servers; old sessions expire by provider rules.
 - Supabase progress and keyring data are only available to approved users via RLS. No anon access to user data.
 - Only encrypted derived key bytes are uploaded to Supabase, never any pattern text or plaintext keys.

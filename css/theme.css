@@ -1167,6 +1167,30 @@ a {
 .pattern-notes-footer {display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:10px 1px 0}
 .pattern-notes-help,.pattern-notes-save-status {font-size:12px;line-height:1.5;color:#9c886c}
 .pattern-notes-save-status {font-weight:850;color:#66826b;text-align:right}
+.pattern-notes-save-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:12px;
+}
+.pattern-notes-save-button {
+  min-height:40px;
+  padding:9px 18px;
+  border-radius:12px;
+  font-size:13px;
+  font-weight:850;
+}
+.pattern-notes-save-button:disabled {
+  opacity:.52;
+  cursor:default;
+  box-shadow:none;
+}
+@media(max-width:680px){
+  .pattern-notes-save-actions{width:100%;justify-content:space-between}
+  .pattern-notes-save-button{min-height:44px}
+}
+
 .pattern-has-note {font-size:12px;color:#ad7d35;font-weight:850;margin:8px 0 0}
 @media(max-width:680px){
   .pattern-notes {border-radius:18px;margin-bottom:18px}

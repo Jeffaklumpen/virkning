@@ -67,6 +67,46 @@
   }
   function dbOpen() { return openDb(DB, STORE, 'id'); }
   function authDbOpen() { return openDb(AUTH_DB, AUTH_STORE); }
+  const REMEMBERED_DB='sunbeam-remembered-unlock-v1';
+  const REMEMBERED_STORE='unlock-keys';
+  function rememberedDbOpen(){return openDb(REMEMBERED_DB,REMEMBERED_STORE)}
+  const validUserId=id=>typeof id==='string'&&/^[0-9a-f-]{36}$/i.test(id);
+  // Native structured cloning into IndexedDB retains the non-extractable
+  // CryptoKey, not the Supabase password or the raw legacy key bytes.
+  async function rememberLibraryUnlock(userId,key){
+    if(!validUserId(userId)||!key||key.extractable!==false||key.type!=='secret')
+      throw Error('Invalid private library unlock.');
+    const db=await rememberedDbOpen();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(REMEMBERED_STORE,'readwrite');
+      tx.objectStore(REMEMBERED_STORE).put(key,userId);
+      tx.oncomplete=()=>{db.close();resolve()};
+      tx.onerror=()=>{db.close();reject(tx.error||Error('Unlock cannot be saved on this device'))};
+    });
+  }
+  async function savedLibraryUnlock(userId){
+    if(!validUserId(userId))return null;
+    const db=await rememberedDbOpen();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(REMEMBERED_STORE,'readonly');
+      const request=tx.objectStore(REMEMBERED_STORE).get(userId);
+      request.onsuccess=()=>resolve(request.result?.type==='secret'&&
+        request.result.extractable===false?request.result:null);
+      request.onerror=()=>reject(request.error);
+      tx.oncomplete=()=>db.close();
+      tx.onerror=()=>db.close();
+    });
+  }
+  async function forgetLibraryUnlock(userId){
+    if(!validUserId(userId))return;
+    const db=await rememberedDbOpen();
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(REMEMBERED_STORE,'readwrite');
+      tx.objectStore(REMEMBERED_STORE).delete(userId);
+      tx.oncomplete=()=>{db.close();resolve()};
+      tx.onerror=()=>{db.close();reject(tx.error)};
+    });
+  }
   function setGuideKey(key) { guideKey = key; }
   function requireGuideKey() {
     if (!guideKey) throw new Error('Sign in before opening private patterns');
@@ -243,6 +283,8 @@
   window.SunbeamStorage = Object.freeze({
     saveKey, baseProgress, loadProgress, persistProgress,
     setProgressUser, getProgressRecord, applyCloudProgress, markProgressSynced,
-    setGuideKey, getAllGuides, storeGuide, getGuide, listStoredIds, storePreview, getPreviews, savedAuthKey, rememberAuthKey, forgetAuthKey
+    setGuideKey, getAllGuides, storeGuide, getGuide, listStoredIds, storePreview, getPreviews,
+    savedAuthKey, rememberAuthKey, forgetAuthKey,
+    rememberLibraryUnlock, savedLibraryUnlock, forgetLibraryUnlock
   });
 })();

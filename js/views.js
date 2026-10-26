@@ -41,7 +41,8 @@
         <label for="pattern-notes-input">Your notes for this whole pattern</label>
         <textarea id="pattern-notes-input" rows="4" maxlength="5000" spellcheck="true" placeholder="e.g. Yarn: cotton, 4 mm hook. Used a different colour for the ears…">${esc(note)}</textarea>
         <div class="pattern-notes-footer"><span class="pattern-notes-help">Just for you ♡ · Up to 5,000 characters</span>
-          <span class="pattern-notes-save-status" id="pattern-notes-save-status" role="status">Saved automatically</span></div>
+          <div class="pattern-notes-save-actions"><span class="pattern-notes-save-status" id="pattern-notes-save-status" role="status">Saved</span>
+            <button type="button" class="btn btn-primary pattern-notes-save-button" id="pattern-notes-save" data-action="save-pattern-notes" disabled>Save note</button></div></div>
       </div>
     </details>`;
   }
