@@ -10,7 +10,7 @@ A small personal crochet companion built as a static installable iPad web app (P
 - `js/views.js` — library, guide and completion HTML templates
 - `js/overview.js` and `css/overview.css` — single-page, scrollable guide overview with sections, step navigation and original images
 - `js/guide-loader.js` — small public catalogue and on-demand encrypted-file loader
-- `js/previews.js` — creates compact on-device cover previews after a pattern opens\n- `data/encrypted/cover-previews.json` — eleven small AES-GCM encrypted original-photo covers, fetched independently of the guides
+- `js/previews.js` — creates compact on-device cover previews after a pattern opens\n- `data/encrypted/cover-previews.json` — thirteen small AES-GCM encrypted original-photo covers, fetched independently of the guides
 - `data/pattern-catalog.json` — metadata and ordered assets for all bundled guides
 - `js/storage.js` — encrypted on-device patterns, remembered login and progress
 - `js/crypto.js` — password-derived keys and encrypted pattern decryption
@@ -71,7 +71,7 @@ Run `node --test tests/smoke.test.mjs` to check the public catalogue, module dep
 
 The grid displays original photographs rather than illustrated substitutes. After unlocking, it uses encrypted previews from device storage or downloads the lightweight encrypted cover bundle. The first visit can briefly show “Loading photo…” while those photos are decrypted. Full guides are only downloaded when opened.
 
-Removing a guide from the visible library does not delete saved progress or encrypted local records. Eleven bundled patterns appear in the app; older device data is preserved for safety.
+Removing a guide from the visible library does not delete saved progress or encrypted local records. Thirteen bundled patterns appear in the app; older device data is preserved for safety.
 
 ## Full pattern overview
 
@@ -102,3 +102,10 @@ Shannon Munro's 14-page Sploot Series guide is packaged as an AES-GCM/gzip prote
 ## Teacup Frog (@hekleguriane.bamser)
 
 The nine-page free pattern is packaged as a private AES-GCM/gzip encrypted, lazy-loaded guide with 29 navigable steps in eight sections. All nine original PDF pages are protected, zoomable references alongside the instructions, with a separate encrypted cover for the grid. The steps cover the frog head and body, cup foot, rim, handle, embroidered smile, and floral decorations. Estimated making time: 3–5 active hours. The plaintext source/PDF is not committed; respect the designer's no-redistribution request.
+
+
+## Pumpkin Man (BubbleLand Studio)
+
+The free BubbleLand **Pumpkin Man** is included as a private, encrypted personal-use guide with 71 navigable steps in ten sections. The guide includes the original photo of both finished examples, an original color-cue page for striped tights, material checklists, progress tracking, and the normal Pattern overview. Its two selectable finishes are **Dungarees** and **Belt rim**, with independent variant-specific steps.
+
+The guide and its cover use the existing RSA-OAEP wrapped AES-GCM session key path already used for Donut Kitty, so it requires no new user password and stays compatible with the normal approved Supabase sign-in. The original PDF, extracted source, and unencrypted images must **never** be committed or redistributed. BubbleLand allows finished items for personal/commercial use but prohibits reproduction or distribution of the pattern itself. Respect those terms.

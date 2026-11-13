@@ -56,3 +56,13 @@ are necessary. Bump the service-worker cache version when changing the bundle.
 - Baby Night Dragon Sploot (Shannon Munro): AES-256-GCM/gzip encrypted guide in `data/encrypted/dragon/`, 39 steps, Night/Light variants and all 14 encrypted PDF-page references. Never commit unencrypted source material.
 
 - Teacup Frog (@hekleguriane.bamser): nine original PDF pages, 29 navigable steps, eight sections, separate protected cover, and protected, lazy-loaded pages. ID: `hekleguriane-teacup-frog`; files in `data/encrypted/teacup/`. Never publish the source document unencrypted.
+
+
+## Pumpkin Man (BubbleLand Studio)
+
+- Stable ID: `bubbleland-pumpkin-man`; title: `Pumpkin Man`; revision 1.
+- The source is the 12-page free BubbleLand PDF; only RSA-OAEP/AES-GCM encrypted guide and cover data are in the repository. Never commit the source PDF or plaintext transcription.
+- 71 steps grouped into 10 chapters; original finished-product photo, color-coded tights reference, materials, two selectable variants (Dungarees / Belt rim), and complete Pattern overview.
+- Cryptography uses the existing `donut-rsa` code path (RSA-OAEP-256 wrapped per-payload AES-256-GCM keys), without needing the original pattern password.
+- PDF terminology is US crochet with invisible decreases. The source says 40 sc for the belt despite 42 stitches at the relevant body round; that ambiguity is flagged, not silently corrected.
+- Source creator prohibits reproducing, translating or redistributing the pattern. Keep all source data local and restricted to the intended private use.
