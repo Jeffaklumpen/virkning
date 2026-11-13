@@ -1,0 +1,4 @@
+/* Encrypted personal-use Pumpkin Man guide. No readable pattern instructions or photos. */
+window.SUNBEAM_ENCRYPTED_GUIDES=window.SUNBEAM_ENCRYPTED_GUIDES||[];
+window.SUNBEAM_ENCRYPTED_GUIDES.push({"id":"bubbleland-pumpkin-man","title":"Pumpkin Man","designer":"BubbleLand Studio","revision":1,"format":"gzip+aes-256-gcm+rsa-oaep","keySource":"donut-rsa","aad":"sunbeam-art-pumpkin-man-v1","iv":"hZjh6ZGbwH+WII0L","wrappedSessionKey":"cAUS5YR39PCXzWE98Nm7128kei4DEsdSRdSQXSkpPHwQW3hDL5D2I7Jmn8e3gUGjxDdplGM2dJtZ+ooszQz2jU/oGSISrWLEBa8QmY1efVEGwyi7Gjh8Lh5N2/hzgneYpsKkwKBrkw4capGTs1cLd4VMkRW7AlN+RrbPyLuWbQZ6FVliKwqoaIgU629D+9RbuN8sViiLtklnbb7CR6HUjpwY6EMk1tj/0FkxU4CriXnJfDOipGRNWz4pT+s3kzg9gVttdxHdZzrnnRUWMkbFD1l3TNpOYivzVpjnbyBytAhUNy6VIiXyZDvGF1KYHXyrocAy1UNai/3ltY9D/XIDkA==","ciphertext":window.SUNBEAM_PUMPKIN_MAN_PARTS.join("")});
+delete window.SUNBEAM_PUMPKIN_MAN_PARTS;
