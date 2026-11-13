@@ -270,7 +270,7 @@ test('login can display an unloaded pattern catalogue without fetching encrypted
   const document={createElement(){inserted++;return {};},head:{appendChild(){}}};
   runInNewContext(source('js/guide-loader.js'),{window,fetch,document,Map,Set,Promise});
   const entries=await window.SunbeamGuides.catalog();
-  assert.equal(entries.length,12);
+  assert.equal(entries.length,13);
   assert.equal(fetched,1);
   assert.equal(inserted,0);
 });
@@ -602,7 +602,7 @@ test('Easter Bunny Bundle adds a fully encrypted, 43-page three-project guide', 
   const entries=JSON.parse(source('data/pattern-catalog.json'));
   const easter=entries.find(entry=>entry.id==='krochet-by-kris-easter-bunny-bundle');
   assert.ok(easter && easter.revision===1);
-  assert.equal(entries.length,12);
+  assert.equal(entries.length,13);
   assert.equal(easter.assets.length,12);
   assert.ok(easter.assets.every(path=>path.startsWith('data/encrypted/easter/')));
   assert.ok(source(easter.assets.at(-1)).includes('gzip+aes-256-gcm'));
