@@ -313,5 +313,18 @@
       "data/encrypted/teacup/part-06.js",
       "data/encrypted/teacup/loader.js"
     ]
+  },
+  {
+    "id": "bubbleland-pumpkin-man",
+    "title": "Pumpkin Man",
+    "designer": "BubbleLand Studio",
+    "revision": 1,
+    "assets": [
+      "data/encrypted/pumpkin-man/part-01.js",
+      "data/encrypted/pumpkin-man/part-02.js",
+      "data/encrypted/pumpkin-man/part-03.js",
+      "data/encrypted/pumpkin-man/part-04.js",
+      "data/encrypted/pumpkin-man/loader.js"
+    ]
   }
 ]
